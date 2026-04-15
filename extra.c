@@ -33,3 +33,28 @@ handle_error:
 
     return -1;
 }
+
+int read_file_int(char *filename, long int *value) {
+    FILE *file_handle;
+    file_handle = NULL;
+
+    file_handle = fopen(filename, "r");
+    if (file_handle == NULL) {
+        goto handle_error;
+    }
+
+    if (fscanf(file_handle, "%ld", value) != 1) {
+        goto handle_error;
+    }
+
+    fclose(file_handle);
+
+    return 0;
+
+    handle_error:
+        if (file_handle != NULL) {
+            fclose(file_handle);
+        }
+
+        return -1;
+}

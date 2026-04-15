@@ -7,7 +7,7 @@
 #define DEVICE_NAME 64
 
 struct interfaces {
-    //Counters folder
+    //Counters folder <- currently working on
     long int port_rcv_data;
     long int port_rcv_packets;
     long int port_multicast_rcv_packets;
@@ -30,7 +30,7 @@ struct interfaces {
     long int link_downed;
     
     //Local ID only used in IB, 0 for RoCE
-    long int lid;
+    long int lid; //done
 
     //hw_counter folder
     long int duplicate_request;
@@ -62,10 +62,11 @@ struct interfaces {
     long int rx_read_requests;
     long int rx_write_requests;
     
-    char link_layer[BUFSIZ];
-    char name_of_interface[DEVICE_NAME];
-    char phys_state[BUFSIZ];
-    char state[BUFSIZ];
+    char link_layer[BUFSIZ]; //DONEEE
+    char name_of_interface[DEVICE_NAME];//done
+    char phys_state[BUFSIZ]; //DONE
+    char state[BUFSIZ]; //doneee
+    char rate[BUFSIZ];  //done
 };
 
 //Each port will have it's own metrics, so we need an array of interfaces
@@ -73,7 +74,7 @@ struct ib_metrics {
     struct interfaces ib_interfaces[INTERFACE_NUMBER];
 };
 
-extern int get_ib_metrics(struct ib_metrics *metrics);     
+extern int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag);     
 
 
 #endif

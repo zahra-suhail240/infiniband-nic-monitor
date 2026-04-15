@@ -147,8 +147,54 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             if(snprintf_result < 0 || ret_read_file < 0){
                 continue;
             }
+
+            strcpy(input_metrics->ib_interfaces[count].state, character_value);
+            printf("%s\n", input_metrics->ib_interfaces[count].state); 
+
+            //Phys_state
+            path_length = strlen(sysfs_port_path) + strlen("/phys_state") + 1;
+            char phys_state_file_path[path_length];
+
+            snprintf_result = snprintf(phys_state_file_path, path_length, "%s/phys_state", sysfs_port_path);
+            ret_read_file = read_file_char(phys_state_file_path, character_value);
+
+            if(snprintf_result < 0 || ret_read_file < 0){
+                continue;
+            }
+            strcpy(input_metrics->ib_interfaces[count].phys_state, character_value);
+            printf("%s\n", input_metrics->ib_interfaces[count].phys_state);
+
+            //rate
+            path_length = strlen(sysfs_port_path) + strlen("/rate") + 1;
+            char rate_file_path[path_length];
+            
+            snprintf_result = snprintf(rate_file_path, path_length, "%s/rate", sysfs_port_path);
+            ret_read_file = read_file_char(rate_file_path, character_value);
+
+            if(snprintf_result < 0 || ret_read_file < 0){
+                continue;
+            }
+            strcpy(input_metrics->ib_interfaces[count].rate, character_value);
+            printf("%s\n", input_metrics->ib_interfaces[count].rate);
+
+            //lid
+            path_length = strlen(sysfs_port_path) + strlen("/lid") + 1;
+            char lid_file_path[path_length];
+
+            snprintf_result = snprintf(lid_file_path, path_length, "%s/lid", sysfs_port_path);
+            ret_read_file = read_file_int(lid_file_path, character_value);
+
+            if(snprintf_result < 0 || ret_read_file < 0){
+                continue;
+            }
+
+            input_metrics->ib_interfaces[count].lid = integer_value;
+            printf("%s\n", input_metrics->ib_interfaces[count].lid);
+
+            
+            
            
-           
+        
 
 
 
