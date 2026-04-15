@@ -8,26 +8,26 @@
 
 struct interfaces {
     //Counters folder <- currently working on
-    long int port_rcv_data;
-    long int port_rcv_packets;
-    long int port_multicast_rcv_packets;
-    long int unicast_rcv_packets;
-    long int port_xmit_data;
-    long int port_xmit_packets;
-    long int port_rcv_switch_relay_errors;
-    long int port_rcv_errors;
-    long int port_rcv_constraint_errors;
-    long int local_link_intgrity_errors;
-    long int port_xmit_wait;
-    long int port_multicast_xmit_packets;
-    long int port_unicast_xmit_packets;
-    long int port_xmit_discards;
-    long int port_xmit_constraint_errors;
-    long int port_rcv_remote_physical_errors;
-    long int symbol_error;
+    long int port_rcv_data; //done
+    long int port_rcv_packets;//done
+    long int port_multicast_rcv_packets; //done
+    long int unicast_rcv_packets; //done
+    long int port_xmit_data;//done
+    long int port_xmit_packets;//done
+    long int port_rcv_switch_relay_errors;//done
+    long int port_rcv_errors; //done
+    long int port_rcv_constraint_errors; //done
+    long int local_link_intgrity_errors;//done
+    long int port_xmit_wait; //done
+    long int port_multicast_xmit_packets;//done
+    long int port_unicast_xmit_packets;//done
+    long int port_xmit_discards;//done
+    long int port_xmit_constraint_errors;//donne
+    long int port_rcv_remote_physical_errors; //done
+    long int symbol_error; //done
     long int VL15_dropped;
-    long int link_error_recovery;
-    long int link_downed;
+    long int link_error_recovery;//done
+    long int link_downed;//done
     
     //Local ID only used in IB, 0 for RoCE
     long int lid; //done

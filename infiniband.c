@@ -6,6 +6,7 @@
 #include <errno.h>
 
 #include <sys/stat.h>
+#include <linux/limits.h>
 
 int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
     //number of interfaces processed
@@ -71,7 +72,8 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             char sysfs_port_path[path_length];
 
             snprintf_result = snprintf(sysfs_port_path, path_length, "%s/%s", sysfs_devices_path, device_entry->d_name);
-
+            
+            printf("what is the path for  sysfs_port_path: %s\n", sysfs_port_path);
             if(snprintf_result < 0){
                 continue;
             }
@@ -102,9 +104,6 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }
             
 
-            //Currently look into the counters folder
-        
-
             size_t device_path_length = strlen(sysfs_port_path);
             path_length = device_path_length  + strlen("/counters") + 1;
             char sysfs_device_port_counters_path[path_length];
@@ -114,7 +113,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
                 continue;
             }
 
-            //Now im inside the counters folder
+           
             printf("%s\n",sysfs_device_port_counters_path); 
 
             struct stat counters_stats;
@@ -189,27 +188,206 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }
 
             input_metrics->ib_interfaces[count].lid = integer_value;
-            printf("%s\n", input_metrics->ib_interfaces[count].lid);
+            printf("%ld\n", input_metrics->ib_interfaces[count].lid);
 
+            //COUNTER FOLDER
             
-            
+           char counters_folder_path[PATH_MAX];
            
+           //symbol_error
+           snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/symbol_error", sysfs_port_path);
+           printf("%s\n", counters_folder_path);
+
+           ret_read_file = read_file_int(counters_folder_path, &integer_value);
+           if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].symbol_error = 0;
+            }else{
+                input_metrics->ib_interfaces[count].symbol_error = integer_value;
+            }
+            printf("content in symbol_error: %ld\n", input_metrics->ib_interfaces[count].symbol_error);
         
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_errors", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].port_rcv_errors = 0;
+            }else{
+                input_metrics->ib_interfaces[count].port_rcv_errors = integer_value;
+            }
+            printf("content in port_rcv_errors: %ld\n", input_metrics->ib_interfaces[count].port_rcv_errors);
+
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_data", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].port_rcv_data = 0;
+            }else{
+                input_metrics->ib_interfaces[count].port_rcv_data = integer_value;
+            }
+            printf("content in port_rcv_data: %ld\n", input_metrics->ib_interfaces[count].port_rcv_data);   
+
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_packets", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].port_rcv_packets = 0;       
+            }else{
+                input_metrics->ib_interfaces[count].port_rcv_packets = integer_value;
+            }
+            printf("content in port_rcv_packets: %ld\n", input_metrics->ib_interfaces[count].port_rcv_packets);     
+
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_multicast_rcv_packets", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].port_multicast_rcv_packets = 0;
+            }else{  
+                input_metrics->ib_interfaces[count].port_multicast_rcv_packets = integer_value;
+            }
+            printf("content in port_multicast_rcv_packets: %ld\n", input_metrics->ib_interfaces[count].port_multicast_rcv_packets); 
+
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/unicast_rcv_packets", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].unicast_rcv_packets = 0;        
+            }else{
+                input_metrics->ib_interfaces[count].unicast_rcv_packets = integer_value;
+            }
+            printf("content in unicast_rcv_packets: %ld\n", input_metrics->ib_interfaces[count].unicast_rcv_packets);   
+
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_xmit_data", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].port_xmit_data = 0;     
+            }else{  
+                input_metrics->ib_interfaces[count].port_xmit_data = integer_value;
+            }
+            printf("content in port_xmit_data: %ld\n", input_metrics->ib_interfaces[count].port_xmit_data);
+
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_xmit_packets", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].port_xmit_packets = 0;     
+            }else{  
+                input_metrics->ib_interfaces[count].port_xmit_packets = integer_value;
+            }
+            printf("content in port_xmit_packets: %ld\n", input_metrics->ib_interfaces[count].port_xmit_packets);
 
 
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_switch_relay_errors", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){       
+                input_metrics->ib_interfaces[count].port_rcv_switch_relay_errors = 0;
+            }else{
+                input_metrics->ib_interfaces[count].port_rcv_switch_relay_errors = integer_value;
+            }
+            printf("content in port_rcv_switch_relay_errors: %ld\n", input_metrics->ib_interfaces[count].port_rcv_switch_relay_errors);
 
 
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_constraint_errors", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){       
+                input_metrics->ib_interfaces[count].port_rcv_constraint_errors = 0;
+            }else{
+                input_metrics->ib_interfaces[count].port_rcv_constraint_errors = integer_value;
+            }
+            printf("content in port_rcv_constraint_errors: %ld\n", input_metrics->ib_interfaces[count].port_rcv_constraint_errors);
+
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/local_link_intgrity_errors", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].local_link_intgrity_errors = 0;
+            }else{
+                input_metrics->ib_interfaces[count].local_link_intgrity_errors = integer_value;
+            }
+            printf("content in local_link_intgrity_errors: %ld\n", input_metrics->ib_interfaces[count].local_link_intgrity_errors);
 
 
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_xmit_wait", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){       
+                input_metrics->ib_interfaces[count].port_xmit_wait = 0;
+            }else{
+                input_metrics->ib_interfaces[count].port_xmit_wait = integer_value;
+            }
+            printf("content in port_xmit_wait: %ld\n", input_metrics->ib_interfaces[count].port_xmit_wait);
+
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_multicast_xmit_packets", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){       
+                input_metrics->ib_interfaces[count].port_multicast_xmit_packets = 0;    
+            }else{
+                input_metrics->ib_interfaces[count].port_multicast_xmit_packets = integer_value;
+            }
+            printf("content in port_multicast_xmit_packets: %ld\n", input_metrics->ib_interfaces[count].port_multicast_xmit_packets);
+
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_unicast_xmit_packets", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);        
+            if(snprintf_result < 0 || ret_read_file < 0){       
+                input_metrics->ib_interfaces[count].port_unicast_xmit_packets = 0;
+            }else{
+                input_metrics->ib_interfaces[count].port_unicast_xmit_packets = integer_value;  
+            }
+            printf("content in port_unicast_xmit_packets: %ld\n", input_metrics->ib_interfaces[count].port_unicast_xmit_packets);
+
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_xmit_discards", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].port_xmit_discards = 0;
+            }else{
+                input_metrics->ib_interfaces[count].port_xmit_discards = integer_value;
+            }
+            printf("content in port_xmit_discards: %ld\n", input_metrics->ib_interfaces[count].port_xmit_discards);
+
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_xmit_constraint_errors", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){       
+                input_metrics->ib_interfaces[count].port_xmit_constraint_errors = 0;
+            }else{
+                input_metrics->ib_interfaces[count].port_xmit_constraint_errors = integer_value;
+            }
+            printf("content in port_xmit_constraint_errors: %ld\n", input_metrics->ib_interfaces[count].port_xmit_constraint_errors);
+
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_remote_physical_errors", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){       
+                input_metrics->ib_interfaces[count].port_rcv_remote_physical_errors = 0;
+            }else{      
+                input_metrics->ib_interfaces[count].port_rcv_remote_physical_errors = integer_value;
+            }
+            printf("content in port_rcv_remote_physical_errors: %ld\n", input_metrics->ib_interfaces[count].port_rcv_remote_physical_errors);
+
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/link_error_recovery", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){       
+                input_metrics->ib_interfaces[count].link_error_recovery = 0;
+            }else{      
+                input_metrics->ib_interfaces[count].link_error_recovery = integer_value;
+            }
+            printf("content in link_error_recovery: %ld\n", input_metrics->ib_interfaces[count].link_error_recovery);
+
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/link_downed", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){       
+                input_metrics->ib_interfaces[count].link_downed = 0;
+            }else{      
+                input_metrics->ib_interfaces[count].link_downed = integer_value;
+            }
+            printf("content in link_downed: %ld\n", input_metrics->ib_interfaces[count].link_downed);   
+
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/VL15_dropped", sysfs_port_path);
+            ret_read_file = read_file_int(counters_folder_path, &integer_value);        
+            if(snprintf_result < 0 || ret_read_file < 0){       
+                input_metrics->ib_interfaces[count].VL15_dropped = 0;
+            }else{
+                input_metrics->ib_interfaces[count].VL15_dropped = integer_value;  
+            }
+            printf("content in VL15_dropped: %ld\n", input_metrics->ib_interfaces[count].VL15_dropped);
 
 
+            ++count;
 
+            if(count >= INTERFACE_NUMBER){
+                break;
+            }
 
-
-
-
-
-            //----- SMAE FOR HW_COUNTERS FOLDER -----//
+            //----- SAME FOR HW_COUNTERS FOLDER -----//
             size_t hw_counters_path_length = strlen(sysfs_port_path);
             path_length = hw_counters_path_length  + strlen("/hw_counters") + 1;
             char sysfs_device_port_HWcounters_path[path_length];
@@ -225,8 +403,14 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             //------------------------------------------//
         
         }
+
+        closedir(device_handle);
         
     }
+
+    closedir(dir_handle);
+    printf("Total number of interfaces processed: %d\n", count);
+    return count;
 
 }   
   
