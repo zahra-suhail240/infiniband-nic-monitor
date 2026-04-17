@@ -195,7 +195,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
            char counters_folder_path[PATH_MAX];
            
            //symbol_error
-           snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/symbol_error", sysfs_port_path);
+           snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/symbol_error", sysfs_port_path); //double check if im suppoed to use this sysfs_port_path
            printf("%s\n", counters_folder_path);
 
            ret_read_file = read_file_int(counters_folder_path, &integer_value);
@@ -381,13 +381,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             printf("content in VL15_dropped: %ld\n", input_metrics->ib_interfaces[count].VL15_dropped);
 
 
-            ++count;
-
-            if(count >= INTERFACE_NUMBER){
-                break;
-            }
-
-            //----- SAME FOR HW_COUNTERS FOLDER -----//
+            //------------------- SAME FOR HW_COUNTERS FOLDER ----------------------//
             size_t hw_counters_path_length = strlen(sysfs_port_path);
             path_length = hw_counters_path_length  + strlen("/hw_counters") + 1;
             char sysfs_device_port_HWcounters_path[path_length];
@@ -399,8 +393,286 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
 
             //Now im inside the counters folder
             printf("%s\n",sysfs_device_port_HWcounters_path); 
+
+            char hw_counters_folder_path[PATH_MAX];
+
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/duplicate_request", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                  input_metrics->ib_interfaces[count].duplicate_request = 0;   
+            }
+            else{
+                input_metrics->ib_interfaces[count].duplicate_request = integer_value;
+            }
+            printf("content in duplicate_request: %ld\n", input_metrics->ib_interfaces[count].duplicate_request);
+
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/implied_nak_seq_err", sysfs_port_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                  input_metrics->ib_interfaces[count].implied_nak_seq_err = 0;   
+            }
+            else{
+                input_metrics->ib_interfaces[count].implied_nak_seq_err = integer_value;
+            }
+            printf("content in implied_nak_seq_err: %ld\n", input_metrics->ib_interfaces[count].implied_nak_seq_err);   
+
+
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/lifespan", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                  input_metrics->ib_interfaces[count].lifespan = 0;   
+            }
+            else{       
+                input_metrics->ib_interfaces[count].lifespan = integer_value;
+            }
+            printf("content in lifespan: %ld\n", input_metrics->ib_interfaces[count].lifespan);
+
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/local_ack_timeout_err", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                  input_metrics->ib_interfaces[count].local_ack_timeout_err = 0;   
+            }
+            else{       
+                input_metrics->ib_interfaces[count].local_ack_timeout_err = integer_value;
+            }
+            printf("content in local_ack_timeout_err: %ld\n", input_metrics->ib_interfaces[count].local_ack_timeout_err);
+
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/np_cnp_sent", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                  input_metrics->ib_interfaces[count].np_cnp_sent = 0;   
+            }
+            else{       
+                input_metrics->ib_interfaces[count].np_cnp_sent = integer_value;
+            }
+            printf("content in np_cnp_sent: %ld\n", input_metrics->ib_interfaces[count].np_cnp_sent);
             
-            //------------------------------------------//
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/np_ecn_marked_roce_packets", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                  input_metrics->ib_interfaces[count].np_ecn_marked_roce_packets = 0;        
+            }
+            else{
+                input_metrics->ib_interfaces[count].np_ecn_marked_roce_packets = integer_value;
+            }
+            printf("content in np_ecn_marked_roce_packets: %ld\n", input_metrics->ib_interfaces[count].np_ecn_marked_roce_packets);
+            
+            
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/out_of_buffer", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                  input_metrics->ib_interfaces[count].out_of_buffer = 0;        
+            }       
+            else{
+                input_metrics->ib_interfaces[count].out_of_buffer = integer_value;
+            }
+            printf("content in out_of_buffer: %ld\n", input_metrics->ib_interfaces[count].out_of_buffer);   
+
+             
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/out_of_sequence", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                  input_metrics->ib_interfaces[count].out_of_sequence = 0;        
+            }       
+            else{
+                input_metrics->ib_interfaces[count].out_of_sequence = integer_value;
+            }
+            printf("content in out_of_sequence: %ld\n", input_metrics->ib_interfaces[count].out_of_sequence);   
+            
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/packet_seq_err", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                  input_metrics->ib_interfaces[count].packet_seq_err = 0;        
+            }       
+            else{       
+                input_metrics->ib_interfaces[count].packet_seq_err = integer_value;
+            }
+            printf("content in packet_seq_err: %ld\n", input_metrics->ib_interfaces[count].packet_seq_err); 
+
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/req_cqe_error", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){       
+                    input_metrics->ib_interfaces[count].req_cqe_error = 0;        
+                }       
+                else{       
+                    input_metrics->ib_interfaces[count].req_cqe_error = integer_value;
+                }   
+            printf("content in req_cqe_error: %ld\n", input_metrics->ib_interfaces[count].req_cqe_error);
+
+
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/req_cqe_flush_error", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){       
+                    input_metrics->ib_interfaces[count].req_cqe_flush_error = 0;        
+                }       
+                else{    
+                    input_metrics->ib_interfaces[count].req_cqe_flush_error = integer_value;        
+                }
+            printf("content in req_cqe_flush_error: %ld\n", input_metrics->ib_interfaces[count].req_cqe_flush_error);
+
+
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/resp_cqe_error", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);     
+            if(snprintf_result < 0 || ret_read_file < 0){       
+                input_metrics->ib_interfaces[count].resp_cqe_error = 0;        
+            }       
+            else{    
+                input_metrics->ib_interfaces[count].resp_cqe_error = integer_value;        
+            }
+            printf("content in resp_cqe_error: %ld\n", input_metrics->ib_interfaces[count].resp_cqe_error);
+
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/resp_cqe_flush_error", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);     
+            if(snprintf_result < 0 || ret_read_file < 0){       
+                input_metrics->ib_interfaces[count].resp_cqe_flush_error = 0;        
+            }       
+            else{    
+                input_metrics->ib_interfaces[count].resp_cqe_flush_error = integer_value;        
+            }
+            printf("content in resp_cqe_flush_error: %ld\n", input_metrics->ib_interfaces[count].resp_cqe_flush_error); 
+
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/resp_remote_access_errors", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){    
+                input_metrics->ib_interfaces[count].resp_remote_access_errors = 0;   
+            }
+            else{
+                input_metrics->ib_interfaces[count].resp_remote_access_errors = integer_value;
+            }
+            printf("content in resp_remote_access_errors: %ld\n", input_metrics->ib_interfaces[count].resp_remote_access_errors); 
+
+            
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/rnr_nak_retry_err", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+
+                input_metrics->ib_interfaces[count].rnr_nak_retry_err = 0;
+
+            }else{
+                input_metrics->ib_interfaces[count].rnr_nak_retry_err = integer_value;
+            }
+
+            printf("content in rnr_nak_retry_err: %ld\n", input_metrics->ib_interfaces[count].rnr_nak_retry_err);
+            
+            
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/roce_adp_retrans", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].roce_adp_retrans = 0;
+            }else{      
+                input_metrics->ib_interfaces[count].roce_adp_retrans = integer_value;
+            }
+            printf("content in roce_adp_retrans: %ld\n", input_metrics->ib_interfaces[count].roce_adp_retrans);
+            
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/roce_adp_rtrans_to", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].roce_adp_rtrans_to = 0;
+            }else{      
+                input_metrics->ib_interfaces[count].roce_adp_rtrans_to = integer_value;
+            }
+            printf("content in roce_adp_rtrans_to: %ld\n", input_metrics->ib_interfaces[count].roce_adp_rtrans_to);
+
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/roce_slow_restart", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value); 
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].roce_slow_restart =0;
+            }else{
+                input_metrics->ib_interfaces[count].roce_slow_restart = integer_value;
+            }
+            printf("content in roce_slow_restart: %ld\n", input_metrics->ib_interfaces[count].roce_slow_restart);
+
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/roce_slow_restart_cnps", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value); 
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].roce_slow_restart_cnps = 0;
+            }else{
+                input_metrics->ib_interfaces[count].roce_slow_restart_cnps = integer_value;
+            }   
+            printf("content in roce_slow_restart_cnps: %ld\n", input_metrics->ib_interfaces[count].roce_slow_restart_cnps);
+
+
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/roce_slow_restart_retrans", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].roce_slow_restart_trans = 0;
+            }else{
+                input_metrics->ib_interfaces[count].roce_slow_restart_trans = integer_value;      
+            }
+            printf("content in roce_slow_restart_trans: %ld\n", input_metrics->ib_interfaces[count].roce_slow_restart_trans);   
+            
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/rp_cnp_handled", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].rp_cnp_handled = 0;
+            }else{
+                input_metrics->ib_interfaces[count].rp_cnp_handled = integer_value;
+            }
+            printf("content in rp_cnp_handled: %ld\n", input_metrics->ib_interfaces[count].rp_cnp_handled);
+
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/rp_cnp_ignored", sysfs_device_port_HWcounters_path);  
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].rp_cnp_ignored = 0;
+            }else{
+                input_metrics->ib_interfaces[count].rp_cnp_ignored = integer_value;
+            }
+            printf("content in rp_cnp_ignored: %ld\n", input_metrics->ib_interfaces[count]. rp_cnp_ignored);
+            
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/rx_atomic_requests", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].rx_atomic_requests = 0;
+            }else{  
+                input_metrics->ib_interfaces[count].rx_atomic_requests = integer_value;
+            }
+            printf("content in rx_atomic_requests: %ld\n", input_metrics->ib_interfaces[count].rx_atomic_requests);
+            
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/rx_dct_connect ", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){   
+                input_metrics->ib_interfaces[count].rx_dct_connect = 0;
+            }else{
+                input_metrics->ib_interfaces[count].rx_dct_connect = integer_value;
+            }
+            printf("content in rx_dct_connect: %ld\n", input_metrics->ib_interfaces[count].rx_dct_connect);
+
+
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/rx_icrc_encapsulatd", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){   
+                input_metrics->ib_interfaces[count].rx_icrc_encapsulatd = 0;
+            }else{
+                input_metrics->ib_interfaces[count].rx_icrc_encapsulatd = integer_value;
+            }
+            printf("content in rx_icrc_encapsulatd: %ld\n", input_metrics->ib_interfaces[count].rx_icrc_encapsulatd);
+            
+            
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/rx_read_requests", sysfs_device_port_HWcounters_path);
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].rx_read_requests = 0;
+            }else{
+                input_metrics->ib_interfaces[count].rx_read_requests = integer_value;
+            }
+            printf("content in rx_read_requests: %ld\n", input_metrics->ib_interfaces[count].rx_read_requests);
+
+            snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/rx_write_requests", sysfs_device_port_HWcounters_path);   
+            ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
+            if(snprintf_result < 0 || ret_read_file < 0){
+                input_metrics->ib_interfaces[count].rx_write_requests = 0;
+            }else{
+                input_metrics->ib_interfaces[count].rx_write_requests = integer_value;
+            }
+            printf("content in rx_write_requests: %ld\n", input_metrics->ib_interfaces[count].rx_write_requests);
+
+            //------------------------------------------------------------//
+
+            ++count;
+
+            if(count >= INTERFACE_NUMBER){
+                break;
+            }
         
         }
 
