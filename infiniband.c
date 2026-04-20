@@ -51,10 +51,6 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
         if(snprintf_result < 0){
             continue;    
         }
-        printf("%d\n", snprintf_result);
-
-       // printf("%s\n", dir_entry->d_name);
-       //count++;
 
         //Need to open the port file now
         device_handle = opendir(sysfs_devices_path);
@@ -73,7 +69,6 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
 
             snprintf_result = snprintf(sysfs_port_path, path_length, "%s/%s", sysfs_devices_path, device_entry->d_name);
             
-            printf("what is the path for  sysfs_port_path: %s\n", sysfs_port_path);
             if(snprintf_result < 0){
                 continue;
             }
@@ -84,26 +79,19 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
 
             snprintf_result = snprintf(path_to_link_layer, path_length, "%s/link_layer", sysfs_port_path);
 
-            printf("%s\n", path_to_link_layer);
-            
             ret_read_file = read_file_char(path_to_link_layer, character_value);
 
-            printf("%d\n", ret_read_file);
 
             if(snprintf_result < 0 || ret_read_file < 0){
                 continue;
             }
 
-            
-
             if(ether_flag <=0){
                 if(strcmp(character_value, "Ethernet") != 0){
-                    printf("DEBUG link_layer raw: '%s'\n", character_value);
                     continue;
                 }
             }
             
-
             size_t device_path_length = strlen(sysfs_port_path);
             path_length = device_path_length  + strlen("/counters") + 1;
             char sysfs_device_port_counters_path[path_length];
@@ -112,9 +100,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             if(snprintf_result < 0){
                 continue;
             }
-
-           
-            printf("%s\n",sysfs_device_port_counters_path); 
+ 
 
             struct stat counters_stats;
 
@@ -130,7 +116,6 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
                 continue;
             }
 
-            printf("%s\n", interface_name);
            
            strcpy(input_metrics->ib_interfaces[count].name_of_interface, interface_name);
            strcpy(input_metrics->ib_interfaces[count].link_layer, character_value);
@@ -141,14 +126,13 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
            snprintf_result = snprintf(state_file_path, path_length, "%s/state", sysfs_port_path);
            ret_read_file = read_file_char(state_file_path, character_value);
            
-           printf("%s\n", state_file_path);
 
             if(snprintf_result < 0 || ret_read_file < 0){
                 continue;
             }
 
             strcpy(input_metrics->ib_interfaces[count].state, character_value);
-            printf("%s\n", input_metrics->ib_interfaces[count].state); 
+            
 
             //Phys_state
             path_length = strlen(sysfs_port_path) + strlen("/phys_state") + 1;
@@ -161,7 +145,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
                 continue;
             }
             strcpy(input_metrics->ib_interfaces[count].phys_state, character_value);
-            printf("%s\n", input_metrics->ib_interfaces[count].phys_state);
+            
 
             //rate
             path_length = strlen(sysfs_port_path) + strlen("/rate") + 1;
@@ -174,7 +158,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
                 continue;
             }
             strcpy(input_metrics->ib_interfaces[count].rate, character_value);
-            printf("%s\n", input_metrics->ib_interfaces[count].rate);
+            
 
             //lid
             path_length = strlen(sysfs_port_path) + strlen("/lid") + 1;
@@ -188,7 +172,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }
 
             input_metrics->ib_interfaces[count].lid = integer_value;
-            printf("%ld\n", input_metrics->ib_interfaces[count].lid);
+            
 
             //COUNTER FOLDER
             
@@ -196,7 +180,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
            
            //symbol_error
            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/symbol_error", sysfs_port_path); //double check if im suppoed to use this sysfs_port_path
-           printf("%s\n", counters_folder_path);
+           
 
            ret_read_file = read_file_int(counters_folder_path, &integer_value);
            if(snprintf_result < 0 || ret_read_file < 0){
@@ -204,7 +188,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].symbol_error = integer_value;
             }
-            printf("content in symbol_error: %ld\n", input_metrics->ib_interfaces[count].symbol_error);
+            
         
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_errors", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
@@ -213,7 +197,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].port_rcv_errors = integer_value;
             }
-            printf("content in port_rcv_errors: %ld\n", input_metrics->ib_interfaces[count].port_rcv_errors);
+            
 
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_data", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
@@ -222,7 +206,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].port_rcv_data = integer_value;
             }
-            printf("content in port_rcv_data: %ld\n", input_metrics->ib_interfaces[count].port_rcv_data);   
+              
 
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_packets", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
@@ -231,7 +215,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].port_rcv_packets = integer_value;
             }
-            printf("content in port_rcv_packets: %ld\n", input_metrics->ib_interfaces[count].port_rcv_packets);     
+              
 
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_multicast_rcv_packets", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
@@ -240,7 +224,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{  
                 input_metrics->ib_interfaces[count].port_multicast_rcv_packets = integer_value;
             }
-            printf("content in port_multicast_rcv_packets: %ld\n", input_metrics->ib_interfaces[count].port_multicast_rcv_packets); 
+            
 
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/unicast_rcv_packets", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
@@ -249,7 +233,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].unicast_rcv_packets = integer_value;
             }
-            printf("content in unicast_rcv_packets: %ld\n", input_metrics->ib_interfaces[count].unicast_rcv_packets);   
+             
 
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_xmit_data", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
@@ -258,7 +242,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{  
                 input_metrics->ib_interfaces[count].port_xmit_data = integer_value;
             }
-            printf("content in port_xmit_data: %ld\n", input_metrics->ib_interfaces[count].port_xmit_data);
+            
 
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_xmit_packets", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
@@ -267,7 +251,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{  
                 input_metrics->ib_interfaces[count].port_xmit_packets = integer_value;
             }
-            printf("content in port_xmit_packets: %ld\n", input_metrics->ib_interfaces[count].port_xmit_packets);
+            
 
 
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_switch_relay_errors", sysfs_port_path);
@@ -277,9 +261,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].port_rcv_switch_relay_errors = integer_value;
             }
-            printf("content in port_rcv_switch_relay_errors: %ld\n", input_metrics->ib_interfaces[count].port_rcv_switch_relay_errors);
-
-
+            
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_constraint_errors", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
             if(snprintf_result < 0 || ret_read_file < 0){       
@@ -287,7 +269,6 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].port_rcv_constraint_errors = integer_value;
             }
-            printf("content in port_rcv_constraint_errors: %ld\n", input_metrics->ib_interfaces[count].port_rcv_constraint_errors);
 
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/local_link_intgrity_errors", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
@@ -296,8 +277,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].local_link_intgrity_errors = integer_value;
             }
-            printf("content in local_link_intgrity_errors: %ld\n", input_metrics->ib_interfaces[count].local_link_intgrity_errors);
-
+            
 
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_xmit_wait", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
@@ -306,7 +286,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].port_xmit_wait = integer_value;
             }
-            printf("content in port_xmit_wait: %ld\n", input_metrics->ib_interfaces[count].port_xmit_wait);
+           
 
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_multicast_xmit_packets", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
@@ -315,7 +295,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].port_multicast_xmit_packets = integer_value;
             }
-            printf("content in port_multicast_xmit_packets: %ld\n", input_metrics->ib_interfaces[count].port_multicast_xmit_packets);
+            
 
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_unicast_xmit_packets", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);        
@@ -324,7 +304,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].port_unicast_xmit_packets = integer_value;  
             }
-            printf("content in port_unicast_xmit_packets: %ld\n", input_metrics->ib_interfaces[count].port_unicast_xmit_packets);
+            
 
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_xmit_discards", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
@@ -333,7 +313,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].port_xmit_discards = integer_value;
             }
-            printf("content in port_xmit_discards: %ld\n", input_metrics->ib_interfaces[count].port_xmit_discards);
+           
 
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_xmit_constraint_errors", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
@@ -342,7 +322,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].port_xmit_constraint_errors = integer_value;
             }
-            printf("content in port_xmit_constraint_errors: %ld\n", input_metrics->ib_interfaces[count].port_xmit_constraint_errors);
+           
 
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_remote_physical_errors", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
@@ -351,7 +331,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{      
                 input_metrics->ib_interfaces[count].port_rcv_remote_physical_errors = integer_value;
             }
-            printf("content in port_rcv_remote_physical_errors: %ld\n", input_metrics->ib_interfaces[count].port_rcv_remote_physical_errors);
+            
 
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/link_error_recovery", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
@@ -360,8 +340,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{      
                 input_metrics->ib_interfaces[count].link_error_recovery = integer_value;
             }
-            printf("content in link_error_recovery: %ld\n", input_metrics->ib_interfaces[count].link_error_recovery);
-
+           
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/link_downed", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
             if(snprintf_result < 0 || ret_read_file < 0){       
@@ -369,7 +348,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{      
                 input_metrics->ib_interfaces[count].link_downed = integer_value;
             }
-            printf("content in link_downed: %ld\n", input_metrics->ib_interfaces[count].link_downed);   
+              
 
             snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/VL15_dropped", sysfs_port_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);        
@@ -378,7 +357,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].VL15_dropped = integer_value;  
             }
-            printf("content in VL15_dropped: %ld\n", input_metrics->ib_interfaces[count].VL15_dropped);
+            
 
 
             //------------------- SAME FOR HW_COUNTERS FOLDER ----------------------//
@@ -392,7 +371,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }
 
             //Now im inside the counters folder
-            printf("%s\n",sysfs_device_port_HWcounters_path); 
+           
 
             char hw_counters_folder_path[PATH_MAX];
 
@@ -404,7 +383,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             else{
                 input_metrics->ib_interfaces[count].duplicate_request = integer_value;
             }
-            printf("content in duplicate_request: %ld\n", input_metrics->ib_interfaces[count].duplicate_request);
+            
 
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/implied_nak_seq_err", sysfs_port_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
@@ -414,8 +393,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             else{
                 input_metrics->ib_interfaces[count].implied_nak_seq_err = integer_value;
             }
-            printf("content in implied_nak_seq_err: %ld\n", input_metrics->ib_interfaces[count].implied_nak_seq_err);   
-
+            
 
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/lifespan", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
@@ -425,7 +403,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             else{       
                 input_metrics->ib_interfaces[count].lifespan = integer_value;
             }
-            printf("content in lifespan: %ld\n", input_metrics->ib_interfaces[count].lifespan);
+           
 
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/local_ack_timeout_err", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
@@ -435,8 +413,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             else{       
                 input_metrics->ib_interfaces[count].local_ack_timeout_err = integer_value;
             }
-            printf("content in local_ack_timeout_err: %ld\n", input_metrics->ib_interfaces[count].local_ack_timeout_err);
-
+           
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/np_cnp_sent", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
             if(snprintf_result < 0 || ret_read_file < 0){
@@ -445,7 +422,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             else{       
                 input_metrics->ib_interfaces[count].np_cnp_sent = integer_value;
             }
-            printf("content in np_cnp_sent: %ld\n", input_metrics->ib_interfaces[count].np_cnp_sent);
+           
             
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/np_ecn_marked_roce_packets", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
@@ -455,7 +432,6 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             else{
                 input_metrics->ib_interfaces[count].np_ecn_marked_roce_packets = integer_value;
             }
-            printf("content in np_ecn_marked_roce_packets: %ld\n", input_metrics->ib_interfaces[count].np_ecn_marked_roce_packets);
             
             
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/out_of_buffer", sysfs_device_port_HWcounters_path);
@@ -466,9 +442,8 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             else{
                 input_metrics->ib_interfaces[count].out_of_buffer = integer_value;
             }
-            printf("content in out_of_buffer: %ld\n", input_metrics->ib_interfaces[count].out_of_buffer);   
+              
 
-             
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/out_of_sequence", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
             if(snprintf_result < 0 || ret_read_file < 0){
@@ -477,7 +452,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             else{
                 input_metrics->ib_interfaces[count].out_of_sequence = integer_value;
             }
-            printf("content in out_of_sequence: %ld\n", input_metrics->ib_interfaces[count].out_of_sequence);   
+            
             
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/packet_seq_err", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
@@ -487,7 +462,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             else{       
                 input_metrics->ib_interfaces[count].packet_seq_err = integer_value;
             }
-            printf("content in packet_seq_err: %ld\n", input_metrics->ib_interfaces[count].packet_seq_err); 
+             
 
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/req_cqe_error", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
@@ -497,8 +472,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
                 else{       
                     input_metrics->ib_interfaces[count].req_cqe_error = integer_value;
                 }   
-            printf("content in req_cqe_error: %ld\n", input_metrics->ib_interfaces[count].req_cqe_error);
-
+           
 
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/req_cqe_flush_error", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
@@ -508,8 +482,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
                 else{    
                     input_metrics->ib_interfaces[count].req_cqe_flush_error = integer_value;        
                 }
-            printf("content in req_cqe_flush_error: %ld\n", input_metrics->ib_interfaces[count].req_cqe_flush_error);
-
+            
 
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/resp_cqe_error", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);     
@@ -519,7 +492,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             else{    
                 input_metrics->ib_interfaces[count].resp_cqe_error = integer_value;        
             }
-            printf("content in resp_cqe_error: %ld\n", input_metrics->ib_interfaces[count].resp_cqe_error);
+            
 
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/resp_cqe_flush_error", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);     
@@ -529,7 +502,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             else{    
                 input_metrics->ib_interfaces[count].resp_cqe_flush_error = integer_value;        
             }
-            printf("content in resp_cqe_flush_error: %ld\n", input_metrics->ib_interfaces[count].resp_cqe_flush_error); 
+             
 
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/resp_remote_access_errors", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
@@ -539,7 +512,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             else{
                 input_metrics->ib_interfaces[count].resp_remote_access_errors = integer_value;
             }
-            printf("content in resp_remote_access_errors: %ld\n", input_metrics->ib_interfaces[count].resp_remote_access_errors); 
+           
 
             
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/rnr_nak_retry_err", sysfs_device_port_HWcounters_path);
@@ -551,9 +524,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].rnr_nak_retry_err = integer_value;
             }
-
-            printf("content in rnr_nak_retry_err: %ld\n", input_metrics->ib_interfaces[count].rnr_nak_retry_err);
-            
+ 
             
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/roce_adp_retrans", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
@@ -562,7 +533,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{      
                 input_metrics->ib_interfaces[count].roce_adp_retrans = integer_value;
             }
-            printf("content in roce_adp_retrans: %ld\n", input_metrics->ib_interfaces[count].roce_adp_retrans);
+          
             
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/roce_adp_rtrans_to", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
@@ -571,7 +542,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{      
                 input_metrics->ib_interfaces[count].roce_adp_rtrans_to = integer_value;
             }
-            printf("content in roce_adp_rtrans_to: %ld\n", input_metrics->ib_interfaces[count].roce_adp_rtrans_to);
+            
 
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/roce_slow_restart", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value); 
@@ -580,7 +551,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].roce_slow_restart = integer_value;
             }
-            printf("content in roce_slow_restart: %ld\n", input_metrics->ib_interfaces[count].roce_slow_restart);
+           
 
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/roce_slow_restart_cnps", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value); 
@@ -589,7 +560,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].roce_slow_restart_cnps = integer_value;
             }   
-            printf("content in roce_slow_restart_cnps: %ld\n", input_metrics->ib_interfaces[count].roce_slow_restart_cnps);
+           
 
 
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/roce_slow_restart_retrans", sysfs_device_port_HWcounters_path);
@@ -599,8 +570,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].roce_slow_restart_trans = integer_value;      
             }
-            printf("content in roce_slow_restart_trans: %ld\n", input_metrics->ib_interfaces[count].roce_slow_restart_trans);   
-            
+             
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/rp_cnp_handled", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
             if(snprintf_result < 0 || ret_read_file < 0){
@@ -608,7 +578,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].rp_cnp_handled = integer_value;
             }
-            printf("content in rp_cnp_handled: %ld\n", input_metrics->ib_interfaces[count].rp_cnp_handled);
+           
 
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/rp_cnp_ignored", sysfs_device_port_HWcounters_path);  
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
@@ -617,7 +587,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].rp_cnp_ignored = integer_value;
             }
-            printf("content in rp_cnp_ignored: %ld\n", input_metrics->ib_interfaces[count]. rp_cnp_ignored);
+           
             
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/rx_atomic_requests", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
@@ -626,7 +596,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{  
                 input_metrics->ib_interfaces[count].rx_atomic_requests = integer_value;
             }
-            printf("content in rx_atomic_requests: %ld\n", input_metrics->ib_interfaces[count].rx_atomic_requests);
+            
             
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/rx_dct_connect ", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
@@ -635,7 +605,6 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].rx_dct_connect = integer_value;
             }
-            printf("content in rx_dct_connect: %ld\n", input_metrics->ib_interfaces[count].rx_dct_connect);
 
 
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/rx_icrc_encapsulatd", sysfs_device_port_HWcounters_path);
@@ -645,7 +614,6 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].rx_icrc_encapsulatd = integer_value;
             }
-            printf("content in rx_icrc_encapsulatd: %ld\n", input_metrics->ib_interfaces[count].rx_icrc_encapsulatd);
             
             
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/rx_read_requests", sysfs_device_port_HWcounters_path);
@@ -655,7 +623,6 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].rx_read_requests = integer_value;
             }
-            printf("content in rx_read_requests: %ld\n", input_metrics->ib_interfaces[count].rx_read_requests);
 
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/rx_write_requests", sysfs_device_port_HWcounters_path);   
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
@@ -664,9 +631,8 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].rx_write_requests = integer_value;
             }
-            printf("content in rx_write_requests: %ld\n", input_metrics->ib_interfaces[count].rx_write_requests);
 
-            //------------------------------------------------------------//
+            //----------------------------------------------------------------------//
 
             ++count;
 
@@ -681,7 +647,6 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
     }
 
     closedir(dir_handle);
-    printf("Total number of interfaces processed: %d\n", count);
     return count;
 
 }   
