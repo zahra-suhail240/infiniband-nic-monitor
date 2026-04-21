@@ -551,7 +551,7 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }else{
                 input_metrics->ib_interfaces[count].roce_slow_restart = integer_value;
             }
-           
+        
 
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/roce_slow_restart_cnps", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value); 
@@ -561,8 +561,6 @@ int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
                 input_metrics->ib_interfaces[count].roce_slow_restart_cnps = integer_value;
             }   
            
-
-
             snprintf_result = snprintf(hw_counters_folder_path, PATH_MAX, "%s/roce_slow_restart_retrans", sysfs_device_port_HWcounters_path);
             ret_read_file = read_file_int(hw_counters_folder_path, &integer_value);
             if(snprintf_result < 0 || ret_read_file < 0){
