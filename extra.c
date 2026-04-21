@@ -58,3 +58,11 @@ int read_file_int(char *filename, long int *value) {
 
         return -1;
 }
+
+int is_linux(void) {
+#ifdef __linux__
+    return 1;
+#else
+    return 0;
+#endif
+}
