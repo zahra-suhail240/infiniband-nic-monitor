@@ -76,6 +76,19 @@ int main(void) {
                 cur.ib_interfaces[i].link_downed +
                 cur.ib_interfaces[i].link_error_recovery);
         }
+        //debug
+        if (prev_flag) {
+            FILE *dbg = fopen("/tmp/ib_debug.txt", "a");
+            if (dbg) {
+                fprintf(dbg, "prev=%ld cur=%ld diff=%ld prev_count=%d n=%d\n",
+                    prev.ib_interfaces[0].port_rcv_packets,
+                    cur.ib_interfaces[0].port_rcv_packets,
+                    cur.ib_interfaces[0].port_rcv_packets - prev.ib_interfaces[0].port_rcv_packets,
+                    prev_count,
+                    res.count);
+                fclose(dbg);
+            }
+        }
 
         draw_screen(pad, &cur, &prev, &baseline, res.active_count,
                     res.count, prev_count,
@@ -139,6 +152,10 @@ int main(void) {
         }
 
         /* fetch new data */
+        prev       = cur;
+        prev_count = res.count;
+        prev_flag  = 1;
+
         ib_results res_new = get_ib_metrics(&cur, ether_flag);
         if (res_new.count < 0) {
             strncpy(error_msg, "ERROR: unable to retrieve IB metrics", BUFSIZ-1);
@@ -149,10 +166,11 @@ int main(void) {
             ++error_flag; break;
         }
 
-        prev       = cur;
-        prev_count = res.count;
+        
         res.count  = res_new.count;
-        prev_flag  = 1;
+        res.active_count = res_new.active_count;
+        res.status       = res_new.status;
+        
     }
 
 done:

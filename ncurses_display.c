@@ -428,16 +428,20 @@ void print_interface_status(WINDOW *w, int row, const struct interfaces *iface)
     mvwprintw(w, row, status_cols[0].start, "%-17s", iface->name_of_interface);
     wattroff(w, A_BOLD); COFF(w, CLR_IFACE_NAME);
 
-    //print_centered(w, row, status_cols[1].start, status_cols[1].width,"%ld", iface->lid, CLR_VALUE, 1);
-    mvwprintw(w, row, status_cols[1].start + 1, "%-16ld", iface->lid);
+    print_centered(w, row, status_cols[1].start, status_cols[1].width,"%ld", iface->lid, CLR_VALUE, 1);
+    //mvwprintw(w, row, status_cols[1].start + 1, "%-16ld", iface->lid);
 
-    mvwprintw(w, row, status_cols[2].start + 1, "%-16s", iface->link_layer);
+    //mvwprintw(w, row, status_cols[2].start + 1, "%-16s", iface->link_layer);
+    print_centered(w, row, status_cols[2].start, status_cols[2].width,"%-16s", iface->link_layer, CLR_VALUE, 1);
 
-    mvwprintw(w, row, status_cols[3].start + 1, "%-16s", iface->state);
-
-    mvwprintw(w, row, status_cols[4].start + 1, "%-16s", iface->phys_state);
-
-    mvwprintw(w, row, status_cols[5].start + 1, "%-18s", iface->rate);
+    //mvwprintw(w, row, status_cols[3].start + 1, "%-16s", iface->state);
+    print_centered(w, row, status_cols[3].start, status_cols[3].width,"%-16s", iface->state, CLR_VALUE, 1);
+    
+    //mvwprintw(w, row, status_cols[4].start + 1, "%-16s", iface->phys_state);
+    print_centered(w, row, status_cols[4].start, status_cols[4].width,"%-16s", iface->phys_state, CLR_VALUE, 1);
+   
+    //mvwprintw(w, row, status_cols[5].start + 1, "%-18s", iface->rate);
+    print_centered(w, row, status_cols[5].start, status_cols[5].width,"%-18s", iface->rate, CLR_VALUE, 1);
 }
 
 /* ------------------------------------------------------------------ */
@@ -449,7 +453,7 @@ void print_io_throughput(WINDOW *w, int row,
 {
     if (refresh_second <= 0) refresh_second = 1;
 
-    long int rx_pkt = (cur->port_rcv_packets - prev->port_rcv_packets) / refresh_second;
+    long int rx_pkt = (cur->port_rcv_packets - prev->port_rcv_packets) / refresh_second; //long int rx_pkt = (cur->port_rcv_packets - prev->port_rcv_packets) / refresh_second;
     long int rx_mb  = (cur->port_rcv_data - prev->port_rcv_data) * 4 / 1024 / 1024 / refresh_second;
     long int tx_pkt = (cur->port_xmit_packets - prev->port_xmit_packets) / refresh_second;
     long int tx_mb  = (cur->port_xmit_data - prev->port_xmit_data) * 4 / 1024 / 1024 / refresh_second;
@@ -634,14 +638,11 @@ void draw_screen(WINDOW *pad,
 
     if (prev_flag > 0) {
         for (int i = 0; i < n; ++i) {
+            int dr = i + 1;
             for (int j = 0; j < prev_count; ++j) {
                 if (strcmp(metrics->ib_interfaces[i].name_of_interface,
                            prev_metrics->ib_interfaces[j].name_of_interface) == 0) {
-                    print_io_throughput(pad,
-                        ROW_IO(n) + 2 + i + 1,
-                        &metrics->ib_interfaces[i],
-                        &prev_metrics->ib_interfaces[j],
-                        refresh_second);
+                    print_io_throughput(pad,ROW_IO(n) + 2 + dr, &metrics->ib_interfaces[i], &prev_metrics->ib_interfaces[j], refresh_second); //print_io_throughput(pad,ROW_IO(n) + 2 + i + 1, &metrics->ib_interfaces[i], &prev_metrics->ib_interfaces[j], refresh_second);
                     break;
                 }
             }

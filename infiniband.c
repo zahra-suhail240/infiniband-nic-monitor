@@ -202,7 +202,7 @@ ib_results get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }
             
         
-            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_errors", sysfs_port_path);
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_errors", sysfs_device_port_counters_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
             if(snprintf_result < 0 || ret_read_file < 0){
                 input_metrics->ib_interfaces[result.count].port_rcv_errors = 0;
@@ -211,7 +211,7 @@ ib_results get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }
             
 
-            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_data", sysfs_port_path);
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_data", sysfs_device_port_counters_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
             if(snprintf_result < 0 || ret_read_file < 0){
                 input_metrics->ib_interfaces[result.count].port_rcv_data = 0;
@@ -220,7 +220,7 @@ ib_results get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }
               
 
-            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_packets", sysfs_port_path);
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_rcv_packets", sysfs_device_port_counters_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
             if(snprintf_result < 0 || ret_read_file < 0){
                 input_metrics->ib_interfaces[result.count].port_rcv_packets = 0;       
@@ -229,7 +229,7 @@ ib_results get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }
               
 
-            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_multicast_rcv_packets", sysfs_port_path);
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_multicast_rcv_packets", sysfs_device_port_counters_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
             if(snprintf_result < 0 || ret_read_file < 0){
                 input_metrics->ib_interfaces[result.count].port_multicast_rcv_packets = 0;
@@ -238,7 +238,7 @@ ib_results get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }
             
 
-            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/unicast_rcv_packets", sysfs_port_path);
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/unicast_rcv_packets", sysfs_device_port_counters_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
             if(snprintf_result < 0 || ret_read_file < 0){
                 input_metrics->ib_interfaces[result.count].unicast_rcv_packets = 0;        
@@ -247,7 +247,7 @@ ib_results get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }
              
 
-            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_xmit_data", sysfs_port_path);
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_xmit_data", sysfs_device_port_counters_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
             if(snprintf_result < 0 || ret_read_file < 0){
                 input_metrics->ib_interfaces[result.count].port_xmit_data = 0;     
@@ -256,7 +256,7 @@ ib_results get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag) {
             }
             
 
-            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_xmit_packets", sysfs_port_path);
+            snprintf_result = snprintf(counters_folder_path, PATH_MAX, "%s/port_xmit_packets", sysfs_device_port_counters_path);
             ret_read_file = read_file_int(counters_folder_path, &integer_value);
             if(snprintf_result < 0 || ret_read_file < 0){
                 input_metrics->ib_interfaces[result.count].port_xmit_packets = 0;     
