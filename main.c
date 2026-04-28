@@ -41,9 +41,9 @@ int main(void) {
 
     /* initial fetch */
     struct ib_metrics cur, prev;
-    int count = get_ib_metrics(&cur, ether_flag);
-    if (count < 0) { fprintf(stderr, "ERROR: unable to retrieve IB metrics\n"); return EXIT_FAILURE; }
-    if (count == 0) { fprintf(stderr, "ERROR: no InfiniBand device found\n");   return EXIT_FAILURE; }
+    ib_results res = get_ib_metrics(&cur, ether_flag);
+    if (res.count < 0) { fprintf(stderr, "ERROR: unable to retrieve IB metrics\n"); return EXIT_FAILURE; }
+    if (res.count == 0) { fprintf(stderr, "ERROR: no InfiniBand device found\n");   return EXIT_FAILURE; }
 
     /* ncurses */
     initscr();
@@ -54,7 +54,7 @@ int main(void) {
     init_colors();
     nodelay(stdscr, TRUE);
 
-    WINDOW *pad = newpad(PAD_TOTAL_ROWS(count), PAD_COLS);
+    WINDOW *pad = newpad(PAD_TOTAL_ROWS(res.count), PAD_COLS);
     if (!pad) { endwin(); fprintf(stderr, "ERROR: failed to create pad\n"); return EXIT_FAILURE; }
 
     int scroll_y = 0, scroll_x = 0;
@@ -69,7 +69,7 @@ int main(void) {
     while (1) {
         /* count total error events across all interfaces */
         error_count = 0;
-        for (int i = 0; i < count; ++i) {
+        for (int i = 0; i < res.count; ++i) {
             error_count += (int)(
                 cur.ib_interfaces[i].symbol_error +
                 cur.ib_interfaces[i].port_rcv_errors +
@@ -77,13 +77,13 @@ int main(void) {
                 cur.ib_interfaces[i].link_error_recovery);
         }
 
-        draw_screen(pad, &cur, &prev, &baseline,
-                    count, prev_count,
+        draw_screen(pad, &cur, &prev, &baseline, res.active_count,
+                    res.count, prev_count,
                     prev_flag, baseline_flag,
                     refresh_second, error_count);
 
         /* clamp scroll */
-        int max_y = PAD_TOTAL_ROWS(count) - LINES;
+        int max_y = PAD_TOTAL_ROWS(res.count) - LINES;
         int max_x = PAD_COLS - COLS;
         if (max_y < 0) max_y = 0;
         if (max_x < 0) max_x = 0;
@@ -139,19 +139,19 @@ int main(void) {
         }
 
         /* fetch new data */
-        int new_count = get_ib_metrics(&cur, ether_flag);
-        if (new_count < 0) {
+        ib_results res_new = get_ib_metrics(&cur, ether_flag);
+        if (res_new.count < 0) {
             strncpy(error_msg, "ERROR: unable to retrieve IB metrics", BUFSIZ-1);
             ++error_flag; break;
         }
-        if (new_count == 0) {
+        if (res_new.count == 0) {
             strncpy(error_msg, "ERROR: no InfiniBand device found", BUFSIZ-1);
             ++error_flag; break;
         }
 
         prev       = cur;
-        prev_count = count;
-        count      = new_count;
+        prev_count = res.count;
+        res.count  = res_new.count;
         prev_flag  = 1;
     }
 

@@ -35,6 +35,7 @@ extern void draw_screen(WINDOW *pad,
                         const struct ib_metrics *metrics,
                         const struct ib_metrics *prev_metrics,
                         const struct ib_metrics *baseline,
+                        int active_count,
                         int interface_count,
                         int prev_count,
                         int prev_flag,
@@ -45,12 +46,12 @@ extern void draw_screen(WINDOW *pad,
 /* ------------------------------------------------------------------ *
  * Individual section printers                                         *
  * ------------------------------------------------------------------ */
-extern void print_header        (WINDOW *pad, int interface_count,
+extern void print_header        (WINDOW *pad, int interface_count, int active_count,
                                  int error_count, int baseline_flag);
 extern void print_summary_cards (WINDOW *pad,
                                  const struct ib_metrics *metrics,
                                  const struct ib_metrics *baseline,
-                                 int interface_count, int error_count,
+                                 int interface_count, int active_count, int error_count,
                                  int baseline_flag);
 extern void construct_window_layout (WINDOW *pad, int interface_count);
 extern void print_delimiter     (WINDOW *pad, int row,

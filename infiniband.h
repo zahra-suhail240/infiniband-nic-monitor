@@ -6,6 +6,12 @@
 #define INTERFACE_NUMBER 16
 #define DEVICE_NAME 64
 
+typedef struct {
+    int count;
+    int active_count;
+    int status;
+} ib_results;
+
 struct interfaces {
     //Counters folder 
     long int port_rcv_data; 
@@ -73,7 +79,7 @@ struct ib_metrics {
     struct interfaces ib_interfaces[INTERFACE_NUMBER];
 };
 
-extern int get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag);     
+extern ib_results get_ib_metrics(struct ib_metrics *input_metrics, int ether_flag);     
 
 
 
