@@ -45,6 +45,15 @@ int main(void) {
     if (res.count < 0) { fprintf(stderr, "ERROR: unable to retrieve IB metrics\n"); return EXIT_FAILURE; }
     if (res.count == 0) { fprintf(stderr, "ERROR: no InfiniBand device found\n");   return EXIT_FAILURE; }
 
+
+    struct ib_metrics baseline = {0};
+    int baseline_flag = 1;
+    for (int i = 0; i < res.count; ++i) {
+        baseline.ib_interfaces[i].port_rcv_data  = cur.ib_interfaces[i].port_rcv_data;
+        baseline.ib_interfaces[i].port_xmit_data = cur.ib_interfaces[i].port_xmit_data;
+    }
+
+
     /* ncurses */
     initscr();
     cbreak();
@@ -62,20 +71,28 @@ int main(void) {
     char error_msg[BUFSIZ] = {0};
     int error_flag = 0;
 
-    /* baseline / soft-reset state */
-    struct ib_metrics baseline;
-    int baseline_flag = 0;
+   
 
     while (1) {
         /* count total error events across all interfaces */
+
         error_count = 0;
         for (int i = 0; i < res.count; ++i) {
+            const struct interfaces *iface = &cur.ib_interfaces[i];
+            const struct interfaces *base  = baseline_flag
+                                            ? &baseline.ib_interfaces[i]
+                                            : iface;
             error_count += (int)(
-                cur.ib_interfaces[i].symbol_error +
-                cur.ib_interfaces[i].port_rcv_errors +
-                cur.ib_interfaces[i].link_downed +
-                cur.ib_interfaces[i].link_error_recovery);
+                (iface->symbol_error            - base->symbol_error) +
+                (iface->port_rcv_errors         - base->port_rcv_errors) +
+                (iface->link_downed             - base->link_downed) +
+                (iface->link_error_recovery     - base->link_error_recovery)
+            );
         }
+
+
+
+
         //debug
         if (prev_flag) {
             FILE *dbg = fopen("/tmp/ib_debug.txt", "a");
@@ -128,16 +145,8 @@ int main(void) {
                     case KEY_PPAGE:           scroll_y -= LINES-2;  scrolled = 1; break;
                     case KEY_HOME:            scroll_y = 0; scroll_x = 0; scrolled = 1; break;
                     case KEY_END:             scroll_y = max_y;     scrolled = 1; break;
-                    case 'r': case 'R':
-                        /* snapshot current counters as the new zero baseline */
-                        baseline      = cur;
-                        baseline_flag = 1;
-                        break;
-                    case 'c': case 'C':
-                        /* clear baseline — go back to raw cumulative values */
-                        baseline_flag = 0;
-                        break;
-                    case 'q': case 'Q':       goto done;
+                    case 'q': case 'Q': goto done;
+
                     default: break;
                 }
             }

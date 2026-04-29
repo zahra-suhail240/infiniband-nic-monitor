@@ -191,9 +191,9 @@ void print_header(WINDOW *w, int interface_count,int active_count, int error_cou
 
     /* RESET ACTIVE badge — shown next to title when baseline is armed */
     if (baseline_flag) {
-        CON(w, CLR_RESET); wattron(w, A_BOLD);
-        mvwprintw(w, 0, 31, " ⟳ COUNTERS RESET  press c to clear ");
-        wattroff(w, A_BOLD); COFF(w, CLR_RESET);
+       // CON(w, CLR_RESET); wattron(w, A_BOLD);
+        //mvwprintw(w, 0, 31, " ⟳ COUNTERS RESET  press c to clear ");
+        //wattroff(w, A_BOLD); COFF(w, CLR_RESET);
     }
 
     /* sysfs path + timestamp */
@@ -257,25 +257,25 @@ void print_summary_cards(WINDOW *w,
     /* card 2 — Total RX */
     draw_box(w, y, card_w, 5, card_w - 1);
     CON(w, CLR_CARD_TITLE);
-    mvwprintw(w, y+1, card_w+2, baseline_flag ? "Total RX (since reset)" : "Total RX");
+    mvwprintw(w, y+1, card_w+2, baseline_flag ? "Total RX " : "Total RX");
     COFF(w, CLR_CARD_TITLE);
     CON(w, CLR_CARD_VALUE); wattron(w, A_BOLD);
     mvwprintw(w, y+2, card_w+2, "%.1f GB", rx_gb);
     wattroff(w, A_BOLD); COFF(w, CLR_CARD_VALUE);
     CON(w, CLR_SUBTEXT); wattron(w, A_DIM);
-    mvwprintw(w, y+3, card_w+2, baseline_flag ? "since r pressed" : "since last reset");
+   // mvwprintw(w, y+3, card_w+2, baseline_flag ? "since r pressed" : "since last reset");
     wattroff(w, A_DIM); COFF(w, CLR_SUBTEXT);
 
     /* card 3 — Total TX */
     draw_box(w, y, card_w*2, 5, card_w - 1);
     CON(w, CLR_CARD_TITLE);
-    mvwprintw(w, y+1, card_w*2+2, baseline_flag ? "Total TX (since reset)" : "Total TX");
+    mvwprintw(w, y+1, card_w*2+2, baseline_flag ? "Total TX" : "Total TX");
     COFF(w, CLR_CARD_TITLE);
     CON(w, CLR_CARD_VALUE); wattron(w, A_BOLD);
     mvwprintw(w, y+2, card_w*2+2, "%.1f GB", tx_gb);
     wattroff(w, A_BOLD); COFF(w, CLR_CARD_VALUE);
     CON(w, CLR_SUBTEXT); wattron(w, A_DIM);
-    mvwprintw(w, y+3, card_w*2+2, baseline_flag ? "since r pressed" : "since last reset");
+    //mvwprintw(w, y+3, card_w*2+2, baseline_flag ? "since r pressed" : "since last reset");
     wattroff(w, A_DIM); COFF(w, CLR_SUBTEXT);
 
     /* card 4 — Error events */
@@ -290,7 +290,7 @@ void print_summary_cards(WINDOW *w,
     if (error_count > 0) COFF(w, CLR_ERROR);
     else                 COFF(w, CLR_CARD_VALUE);
     CON(w, CLR_SUBTEXT); wattron(w, A_DIM);
-    mvwprintw(w, y+3, card_w*3+2, baseline_flag ? "since r pressed" : "cumulative");
+   // mvwprintw(w, y+3, card_w*3+2, baseline_flag ? "since r pressed" : "cumulative");
     wattroff(w, A_DIM); COFF(w, CLR_SUBTEXT);
 }
 
@@ -398,7 +398,7 @@ void construct_window_layout(WINDOW *w, int n) {
     /* ---- footer -------------------------------------------------- */
     CON(w, CLR_SUBTEXT); wattron(w, A_DIM);
     mvwprintw(w, PAD_TOTAL_ROWS(n)-1, 2,
-        "↑↓/jk scroll   ←→/hl scroll   Space/PgDn   PgUp   Home   End   r reset counters   c clear reset   q quit");
+        "↑↓/jk scroll   ←→/hl scroll   Space/PgDn   PgUp   Home   End   q quit");
     wattroff(w, A_DIM); COFF(w, CLR_SUBTEXT);
 
 #undef BANNER
@@ -440,8 +440,8 @@ void print_interface_status(WINDOW *w, int row, const struct interfaces *iface)
     //mvwprintw(w, row, status_cols[4].start + 1, "%-16s", iface->phys_state);
     print_centered(w, row, status_cols[4].start, status_cols[4].width,"%-16s", iface->phys_state, CLR_VALUE, 1);
    
-    //mvwprintw(w, row, status_cols[5].start + 1, "%-18s", iface->rate);
-    print_centered(w, row, status_cols[5].start, status_cols[5].width,"%-18s", iface->rate, CLR_VALUE, 1);
+    mvwprintw(w, row, status_cols[5].start + 1, "%-18s", iface->rate);
+    //print_centered(w, row, status_cols[5].start, status_cols[5].width,"%-18s", iface->rate, CLR_VALUE, 1);
 }
 
 /* ------------------------------------------------------------------ */
@@ -628,12 +628,12 @@ void draw_screen(WINDOW *pad,
                                          : iface;   /* unused when flag=0 */
         int dr = i + 1;
         print_interface_status   (pad, ROW_STATUS(n) + 2 + dr, iface);
-        print_link_errors        (pad, ROW_LINK(n)   + 2 + dr, iface, base, baseline_flag);
-        print_port_errors        (pad, ROW_LINK(n)   + 2 + dr, iface, base, baseline_flag);
-        print_roce_congestion    (pad, ROW_ROCE(n)   + 2 + dr, iface, base, baseline_flag);
-        print_cqe_errors         (pad, ROW_CQE(n)    + 2 + dr, iface, base, baseline_flag);
-        print_seq_timeout_errors (pad, ROW_CQE(n)    + 2 + dr, iface, base, baseline_flag);
-        print_rx_operations      (pad, ROW_RXOPS(n)  + 2 + dr, iface, base, baseline_flag);
+        print_link_errors        (pad, ROW_LINK(n)   + 2 + dr, iface, base, 0); //last param was baseline_flag
+        print_port_errors        (pad, ROW_LINK(n)   + 2 + dr, iface, base, 0);
+        print_roce_congestion    (pad, ROW_ROCE(n)   + 2 + dr, iface, base, 0);
+        print_cqe_errors         (pad, ROW_CQE(n)    + 2 + dr, iface, base, 0);
+        print_seq_timeout_errors (pad, ROW_CQE(n)    + 2 + dr, iface, base, 0);
+        print_rx_operations      (pad, ROW_RXOPS(n)  + 2 + dr, iface, base, 0);
     }
 
     if (prev_flag > 0) {
