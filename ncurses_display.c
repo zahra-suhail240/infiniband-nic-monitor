@@ -10,24 +10,6 @@ typedef struct {
     int width;
 } col_t;
 
-static void print_centered(WINDOW *w, int row, int col_start, int width,
-                           const char *fmt, long val, int color_pair, int is_bold)
-{
-    char buf[64];
-    snprintf(buf, sizeof(buf), fmt, val);
-
-    int len = (int)strlen(buf);
-    int col = col_start + (width - len) / 2;
-
-    wattron(w, COLOR_PAIR(color_pair));
-    if (is_bold) wattron(w, A_BOLD);
-
-    mvwprintw(w, row, col, "%s", buf);
-
-    if (is_bold) wattroff(w, A_BOLD);
-    wattroff(w, COLOR_PAIR(color_pair));
-}
-
 /* ================================================================== *
  * Color init                                                          *
  * ================================================================== */
@@ -57,26 +39,6 @@ void init_colors(void) {
 #define CON(w, p)  wattron((w),  COLOR_PAIR(p))
 #define COFF(w, p) wattroff((w), COLOR_PAIR(p))
 
-/* Print a long value: white if zero, cyan+bold otherwise */
-#define PRINT_VAL(w, row, col, fmt, val) \
-    do { \
-        if ((val) == 0) { CON(w, CLR_ZERO); } \
-        else            { CON(w, CLR_VALUE); wattron(w, A_BOLD); } \
-        mvwprintw((w), (row), (col), (fmt), (val)); \
-        if ((val) == 0) { COFF(w, CLR_ZERO); } \
-        else            { wattroff(w, A_BOLD); COFF(w, CLR_VALUE); } \
-    } while (0)
-
-/* Print an error value: red+bold if non-zero, dim white if zero */
-#define PRINT_ERR(w, row, col, fmt, val) \
-    do { \
-        if ((val) == 0) { CON(w, CLR_ZERO); } \
-        else            { CON(w, CLR_ERROR); wattron(w, A_BOLD); } \
-        mvwprintw((w), (row), (col), (fmt), (val)); \
-        if ((val) == 0) { COFF(w, CLR_ZERO); } \
-        else            { wattroff(w, A_BOLD); COFF(w, CLR_ERROR); } \
-    } while (0)
-
 /*
  * BVAL — subtract baseline when active, otherwise return raw value.
  * Clamps to 0 to avoid showing negatives if baseline was taken mid-flight.
@@ -97,31 +59,112 @@ void init_colors(void) {
 #define PAD_TOTAL_ROWS(n)  (ROW_RXOPS(n) + (n) + 6)
 #define PAD_COLS  500
 
+/*
+ * Column layout arrays — each entry's .start and .width are derived
+ * directly from the pipe '|' positions in the matching header string
+ * printed by construct_window_layout().
+ *
+ * Formula: for pipe positions p[0], p[1], ..., p[k]:
+ *   col[0]   = { start:1,        width: p[0]-1        }
+ *   col[i]   = { start: p[i-1]+1, width: p[i]-p[i-1]-1 }  for i=1..k
+ *   col[k+1] = { start: p[k]+1,  width: (end)-p[k]-1  }
+ */
 
-/* Interface status */
+/* "Interface         | LID  | Link layer | State          | Physical state |  Rate"
+ *  ^                 ^      ^            ^                ^                ^
+ *  0                 18     25           37               53               69      */
 static col_t status_cols[] = {
-    {1,17}, {18,10}, {28,18}, {46,18}, {64,18}, {82,20}
+    {1,  17},   /* Interface */
+    {19,  6},   /* LID */
+    {26, 11},   /* Link layer */
+    {38, 15},   /* State */
+    {54, 15},   /* Physical state */
+    {70,  6},   /* Rate */
 };
 
-/* IO throughput */
+/* "Interface         | RX packets | RX MB/s | TX packets | TX MB/s | UC RX pkts | UC TX pkts | MC RX pkts | MC TX pkts"
+ *  ^                 ^            ^         ^            ^         ^             ^             ^             ^
+ *  0                 18           30        39           50        59            71            83            95          */
 static col_t io_cols[] = {
-    {1,17}, {18,13}, {31,11}, {42,13}, {55,11},
-    {66,17}, {83,17}, {100,17}, {117,17}
+    {1,  17},   /* Interface */
+    {19, 11},   /* RX packets */
+    {31,  8},   /* RX MB/s */
+    {40, 10},   /* TX packets */
+    {51,  8},   /* TX MB/s */
+    {60, 11},   /* UC RX pkts */
+    {72, 11},   /* UC TX pkts */
+    {84, 11},   /* MC RX pkts */
+    {96, 11},   /* MC TX pkts */
 };
 
-/* Link errors */
+/* "Interface         | Recovery | Integrity | Downed"
+ *  ^                 ^          ^            ^
+ *  0                 18         28           39      */
 static col_t link_cols[] = {
-    {1,17}, {18,16}, {34,16}, {50,12}
+    {1,  17},   /* Interface */
+    {19,  9},   /* Recovery */
+    {29, 10},   /* Integrity */
+    {40,  6},   /* Downed */
 };
 
-/* Port errors (right side) */
+/* "Interface         | Symbol | RX err | RX rem PHY | TX discard"
+ *  ^                 ^        ^        ^             ^
+ *  0                 18       26       34            46          */
 static col_t port_cols[] = {
-    {0,17}, {18,10}, {29,10}, {39,15}, {54,15}
+    {1,  17},   /* Interface  (offset within right half; caller adds half) */
+    {19,  7},   /* Symbol */
+    {27,  7},   /* RX err */
+    {35, 11},   /* RX rem PHY */
+    {47, 10},   /* TX discard */
 };
 
-/* RX ops */
+/* "Interface         | NP CNP sent | NP ECN pkts | RP CNP handled | RP CNP ignored | Adp retrans | Adp retrans TO | Slow restart"
+ *  ^                 ^             ^             ^                ^                ^             ^                ^
+ *  0                 18            31            44               59               75            87               102           */
+static col_t roce_cols[] = {
+    {1,  17},   /* Interface */
+    {19, 12},   /* NP CNP sent */
+    {32, 12},   /* NP ECN pkts */
+    {45, 14},   /* RP CNP handled */
+    {60, 15},   /* RP CNP ignored */
+    {76, 11},   /* Adp retrans */
+    {88, 14},   /* Adp retrans TO */
+    {103,12},   /* Slow restart */
+};
+
+/* "Interface         | Req CQE | Req flush | Resp CQE | Resp flush"
+ *  ^                 ^         ^            ^          ^
+ *  0                 18        27           37         47          */
+static col_t cqe_cols[] = {
+    {1,  17},   /* Interface */
+    {19,  8},   /* Req CQE */
+    {28,  9},   /* Req flush */
+    {38,  9},   /* Resp CQE */
+    {48,  9},   /* Resp flush */
+};
+
+/* "Interface         | Dup req | Impl NAK | Local ACK TO | Out of Buffer"
+ *  ^                 ^         ^           ^              ^
+ *  0                 18        27           37             50             */
+static col_t seq_cols[] = {
+    {1,  17},   /* Interface  (offset within right half; caller adds half) */
+    {19,  8},   /* Dup req */
+    {28,  9},   /* Impl NAK */
+    {38, 12},   /* Local ACK TO */
+    {51, 13},   /* Out of Buffer */
+};
+
+/* "Interface         | Atomic req | DCT connect | ICRC encap | Read req | Write req | Lifespan"
+ *  ^                 ^            ^             ^            ^          ^            ^
+ *  0                 18           30            43           55         65           76        */
 static col_t rx_cols[] = {
-    {1,17}, {18,14}, {33,14}, {48,14}, {62,12}, {75,12}, {88,12}
+    {1,  17},   /* Interface */
+    {19, 11},   /* Atomic req */
+    {31, 12},   /* DCT connect */
+    {44, 11},   /* ICRC encap */
+    {56,  9},   /* Read req */
+    {66, 20},   /* Write req was 10 */
+    {88,  8},   /* Lifespan */
 };
 
 #define NCOLS(a) (int)(sizeof(a)/sizeof((a)[0]))
@@ -160,7 +203,7 @@ static void print_badge_gray(WINDOW *w, int row, int col, const char *label) {
 /* ================================================================== *
  * print_header                                                        *
  * ================================================================== */
-void print_header(WINDOW *w, int interface_count,int active_count, int error_count,
+void print_header(WINDOW *w, int interface_count, int active_count, int error_count,
                   int baseline_flag) {
     /* title */
     CON(w, CLR_TITLE);
@@ -188,13 +231,6 @@ void print_header(WINDOW *w, int interface_count,int active_count, int error_cou
     mvwprintw(w, 0, ax+4+(int)strlen(active_str)+8, "%s", error_str);
     COFF(w, error_count > 0 ? CLR_ERROR : CLR_BADGE);
     mvwprintw(w, 0, ax+4+(int)strlen(active_str)+8+(int)strlen(error_str), " ]");
-
-    /* RESET ACTIVE badge — shown next to title when baseline is armed */
-    if (baseline_flag) {
-       // CON(w, CLR_RESET); wattron(w, A_BOLD);
-        //mvwprintw(w, 0, 31, " ⟳ COUNTERS RESET  press c to clear ");
-        //wattroff(w, A_BOLD); COFF(w, CLR_RESET);
-    }
 
     /* sysfs path + timestamp */
     time_t now = time(NULL);
@@ -262,9 +298,6 @@ void print_summary_cards(WINDOW *w,
     CON(w, CLR_CARD_VALUE); wattron(w, A_BOLD);
     mvwprintw(w, y+2, card_w+2, "%.1f GB", rx_gb);
     wattroff(w, A_BOLD); COFF(w, CLR_CARD_VALUE);
-    CON(w, CLR_SUBTEXT); wattron(w, A_DIM);
-   // mvwprintw(w, y+3, card_w+2, baseline_flag ? "since r pressed" : "since last reset");
-    wattroff(w, A_DIM); COFF(w, CLR_SUBTEXT);
 
     /* card 3 — Total TX */
     draw_box(w, y, card_w*2, 5, card_w - 1);
@@ -274,9 +307,6 @@ void print_summary_cards(WINDOW *w,
     CON(w, CLR_CARD_VALUE); wattron(w, A_BOLD);
     mvwprintw(w, y+2, card_w*2+2, "%.1f GB", tx_gb);
     wattroff(w, A_BOLD); COFF(w, CLR_CARD_VALUE);
-    CON(w, CLR_SUBTEXT); wattron(w, A_DIM);
-    //mvwprintw(w, y+3, card_w*2+2, baseline_flag ? "since r pressed" : "since last reset");
-    wattroff(w, A_DIM); COFF(w, CLR_SUBTEXT);
 
     /* card 4 — Error events */
     draw_box(w, y, card_w*3, 5, card_w - 1);
@@ -289,9 +319,6 @@ void print_summary_cards(WINDOW *w,
     wattroff(w, A_BOLD);
     if (error_count > 0) COFF(w, CLR_ERROR);
     else                 COFF(w, CLR_CARD_VALUE);
-    CON(w, CLR_SUBTEXT); wattron(w, A_DIM);
-   // mvwprintw(w, y+3, card_w*3+2, baseline_flag ? "since r pressed" : "cumulative");
-    wattroff(w, A_DIM); COFF(w, CLR_SUBTEXT);
 }
 
 /* ================================================================== *
@@ -385,7 +412,7 @@ void construct_window_layout(WINDOW *w, int n) {
     print_badge(w, ROW_RXOPS(n), 16, "cumulative");
     print_badge_gray(w, ROW_RXOPS(n), COLS-14, "/hw_counters");
     HDR(ROW_RXOPS(n)+1, 1,
-        "Interface         | Atomic req | DCT connect | ICRC encap | Read req | Write req | Lifespan");
+        "Interface         | Atomic req | DCT connect | ICRC encap | Read req |             Write request             | Lifespan");
     HLINE(ROW_RXOPS(n)+2);
 
     /* ---- section separators -------------------------------------- */
@@ -407,41 +434,30 @@ void construct_window_layout(WINDOW *w, int n) {
 }
 
 /* ================================================================== *
- * print_delimiter                                                     *
- * ================================================================== */
-void print_delimiter(WINDOW *w, int row, int *cols, size_t n) {
-    CON(w, CLR_SEPARATOR);
-    wattron(w, A_BOLD);
-    for (size_t i = 0; i < n; ++i)
-        mvwprintw(w, row, cols[i], "|");
-    wattroff(w, A_BOLD);
-    COFF(w, CLR_SEPARATOR);
-}
-
-/* ================================================================== *
  * Data row printers                                                   *
  * ================================================================== */
 
 void print_interface_status(WINDOW *w, int row, const struct interfaces *iface)
 {
-    CON(w, CLR_IFACE_NAME); wattron(w, A_BOLD);
-    mvwprintw(w, row, status_cols[0].start, "%-17s", iface->name_of_interface);
-    wattroff(w, A_BOLD); COFF(w, CLR_IFACE_NAME);
-
-    print_centered(w, row, status_cols[1].start, status_cols[1].width,"%ld", iface->lid, CLR_VALUE, 1);
-    //mvwprintw(w, row, status_cols[1].start + 1, "%-16ld", iface->lid);
-
-    //mvwprintw(w, row, status_cols[2].start + 1, "%-16s", iface->link_layer);
-    print_centered(w, row, status_cols[2].start, status_cols[2].width,"%-16s", iface->link_layer, CLR_VALUE, 1);
-
-    //mvwprintw(w, row, status_cols[3].start + 1, "%-16s", iface->state);
-    print_centered(w, row, status_cols[3].start, status_cols[3].width,"%-16s", iface->state, CLR_VALUE, 1);
     
-    //mvwprintw(w, row, status_cols[4].start + 1, "%-16s", iface->phys_state);
-    print_centered(w, row, status_cols[4].start, status_cols[4].width,"%-16s", iface->phys_state, CLR_VALUE, 1);
-   
-    mvwprintw(w, row, status_cols[5].start + 1, "%-18s", iface->rate);
-    //print_centered(w, row, status_cols[5].start, status_cols[5].width,"%-18s", iface->rate, CLR_VALUE, 1);
+    CON(w, CLR_IFACE_NAME); wattron(w, A_BOLD);
+    mvwprintw(w, row, status_cols[0].start, "%s", iface->name_of_interface);//-17
+    wattroff(w, A_BOLD); COFF(w, CLR_IFACE_NAME);
+    
+
+    mvwprintw(w, row, status_cols[1].start+3, "%-5ld", iface->lid);
+
+    /* 3. Link layer - Left aligned */
+    mvwprintw(w, row, status_cols[2].start+3, "%-13s", iface->link_layer);
+
+    /* 4. State - Left aligned */
+    mvwprintw(w, row, status_cols[3].start+5, "%-17s", iface->state);
+
+    /* 5. Physical state - Left aligned */
+    mvwprintw(w, row, status_cols[4].start+5, "%-19s", iface->phys_state);
+
+    /* 6. Rate - Left aligned (best for long strings like "200 Gb/sec (4X HDR)") */
+    mvwprintw(w, row, status_cols[5].start+7, "%-30s", iface->rate);
 }
 
 /* ------------------------------------------------------------------ */
@@ -453,151 +469,199 @@ void print_io_throughput(WINDOW *w, int row,
 {
     if (refresh_second <= 0) refresh_second = 1;
 
-    long int rx_pkt = (cur->port_rcv_packets - prev->port_rcv_packets) / refresh_second; //long int rx_pkt = (cur->port_rcv_packets - prev->port_rcv_packets) / refresh_second;
-    long int rx_mb  = (cur->port_rcv_data - prev->port_rcv_data) * 4 / 1024 / 1024 / refresh_second;
-    long int tx_pkt = (cur->port_xmit_packets - prev->port_xmit_packets) / refresh_second;
-    long int tx_mb  = (cur->port_xmit_data - prev->port_xmit_data) * 4 / 1024 / 1024 / refresh_second;
-    long int uc_rx  = (cur->unicast_rcv_packets - prev->unicast_rcv_packets) / refresh_second;
-    long int uc_tx  = (cur->port_unicast_xmit_packets - prev->port_unicast_xmit_packets) / refresh_second;
-    long int mc_rx  = (cur->port_multicast_rcv_packets - prev->port_multicast_rcv_packets) / refresh_second;
-    long int mc_tx  = (cur->port_multicast_xmit_packets - prev->port_multicast_xmit_packets) / refresh_second;
+    long int rx_pkt = (cur->port_rcv_packets    - prev->port_rcv_packets)    / refresh_second;
+    long int rx_mb  = (cur->port_rcv_data        - prev->port_rcv_data)   * 4 / 1024 / 1024 / refresh_second;
+    long int tx_pkt = (cur->port_xmit_packets   - prev->port_xmit_packets)   / refresh_second;
+    long int tx_mb  = (cur->port_xmit_data       - prev->port_xmit_data)  * 4 / 1024 / 1024 / refresh_second;
+    long int uc_rx  = (cur->unicast_rcv_packets              - prev->unicast_rcv_packets)              / refresh_second;
+    long int uc_tx  = (cur->port_unicast_xmit_packets        - prev->port_unicast_xmit_packets)        / refresh_second;
+    long int mc_rx  = (cur->port_multicast_rcv_packets       - prev->port_multicast_rcv_packets)       / refresh_second;
+    long int mc_tx  = (cur->port_multicast_xmit_packets      - prev->port_multicast_xmit_packets)      / refresh_second;
 
     CON(w, CLR_IFACE_NAME); wattron(w, A_BOLD);
     mvwprintw(w, row, io_cols[0].start, "%-17s", cur->name_of_interface);
     wattroff(w, A_BOLD); COFF(w, CLR_IFACE_NAME);
 
-    print_centered(w, row, io_cols[1].start, io_cols[1].width, "%ld", rx_pkt, CLR_VALUE, 1);
-    print_centered(w, row, io_cols[2].start, io_cols[2].width, "%ld", rx_mb,  CLR_VALUE, 1);
-    print_centered(w, row, io_cols[3].start, io_cols[3].width, "%ld", tx_pkt, CLR_VALUE, 1);
-    print_centered(w, row, io_cols[4].start, io_cols[4].width, "%ld", tx_mb,  CLR_VALUE, 1);
-    print_centered(w, row, io_cols[5].start, io_cols[5].width, "%ld", uc_rx,  CLR_VALUE, 1);
-    print_centered(w, row, io_cols[6].start, io_cols[6].width, "%ld", uc_tx,  CLR_VALUE, 1);
-    print_centered(w, row, io_cols[7].start, io_cols[7].width, "%ld", mc_rx,  CLR_VALUE, 1);
-    print_centered(w, row, io_cols[8].start, io_cols[8].width, "%ld", mc_tx,  CLR_VALUE, 1);
+    
+    mvwprintw(w, row, io_cols[1].start+5, "%-8ld", rx_pkt);
+
+    mvwprintw(w, row, io_cols[2].start+5, "%-8ld", rx_mb);
+
+    mvwprintw(w, row, io_cols[3].start+8, "%-8ld", tx_pkt);
+
+    mvwprintw(w, row, io_cols[4].start+9, "%-8ld", tx_mb);
+
+    mvwprintw(w, row, io_cols[5].start+12, "%-8ld", uc_rx);
+
+    mvwprintw(w, row, io_cols[6].start+11, "%-8ld", uc_tx);
+
+    mvwprintw(w, row, io_cols[7].start+15,"%-8ld", mc_rx);
+
+    mvwprintw(w, row, io_cols[8].start+15, "%-8ld", mc_tx);
 }
 
 /* ------------------------------------------------------------------ */
 void print_link_errors(WINDOW *w, int row,
                        const struct interfaces *iface,
                        const struct interfaces *base,
-                       int baseline_flag) {
-    //print_delimiter(w, row, cols_link, (size_t)NCOLS(cols_link));
+                       int baseline_flag)
+{
     CON(w, CLR_IFACE_NAME); wattron(w, A_BOLD);
-    mvwprintw(w, row, 1, "%-17s", iface->name_of_interface);
+    mvwprintw(w, row, link_cols[0].start, "%-17s", iface->name_of_interface);
     wattroff(w, A_BOLD); COFF(w, CLR_IFACE_NAME);
-    PRINT_ERR(w, row, 19, "%13ld",
-              BVAL(baseline_flag, iface->link_error_recovery,       base->link_error_recovery));
-    PRINT_ERR(w, row, 35, "%13ld",
-              BVAL(baseline_flag, iface->local_link_intgrity_errors, base->local_link_intgrity_errors));
-    PRINT_ERR(w, row, 51, "%8ld",
-              BVAL(baseline_flag, iface->link_downed,               base->link_downed));
+
+    long v1 = BVAL(baseline_flag, iface->link_error_recovery,       base->link_error_recovery);
+    long v2 = BVAL(baseline_flag, iface->local_link_intgrity_errors, base->local_link_intgrity_errors);
+    long v3 = BVAL(baseline_flag, iface->link_downed,               base->link_downed);
+
+    mvwprintw(w, row, link_cols[1].start+5, "%-6ld", v1);
+
+    mvwprintw(w, row, link_cols[2].start+6, "%-6ld", v2);
+
+    mvwprintw(w, row, link_cols[3].start+6, "%-6ld", v3);
 }
+   
 
 /* ------------------------------------------------------------------ */
 void print_port_errors(WINDOW *w, int row,
                        const struct interfaces *iface,
                        const struct interfaces *base,
-                       int baseline_flag) {
-    int b = COLS / 2 + 1;
-    //print_delimiter(w, row, cols_port, (size_t)NCOLS(cols_port));
+                       int baseline_flag)
+{
+    int b = COLS / 2 + 1;   /* right-half base column */
+
     CON(w, CLR_IFACE_NAME); wattron(w, A_BOLD);
-    mvwprintw(w, row, b, "%-17s", iface->name_of_interface);
+    mvwprintw(w, row, b + port_cols[0].start, "%-17s", iface->name_of_interface);
     wattroff(w, A_BOLD); COFF(w, CLR_IFACE_NAME);
-    PRINT_ERR(w, row, b+18, "%6ld",
-              BVAL(baseline_flag, iface->symbol_error,                      base->symbol_error));
-    PRINT_ERR(w, row, b+28, "%6ld",
-              BVAL(baseline_flag, iface->port_rcv_errors,                   base->port_rcv_errors));
-    PRINT_ERR(w, row, b+40, "%10ld",
-              BVAL(baseline_flag, iface->port_rcv_remote_physical_errors,   base->port_rcv_remote_physical_errors));
-    PRINT_ERR(w, row, b+55, "%10ld",
-              BVAL(baseline_flag, iface->port_xmit_discards,                base->port_xmit_discards));
+
+    long v1 = BVAL(baseline_flag, iface->symbol_error,                    base->symbol_error);
+    long v2 = BVAL(baseline_flag, iface->port_rcv_errors,                 base->port_rcv_errors);
+    long v3 = BVAL(baseline_flag, iface->port_rcv_remote_physical_errors, base->port_rcv_remote_physical_errors);
+    long v4 = BVAL(baseline_flag, iface->port_xmit_discards,              base->port_xmit_discards);
+
+    mvwprintw(w, row, port_cols[1].start+b+4, "%-6ld", v1);
+
+    mvwprintw(w, row, port_cols[2].start+b+4, "%-6ld", v2);
+    
+    mvwprintw(w, row, port_cols[3].start+b+7, "%-6ld", v3);
+   
+    mvwprintw(w, row,port_cols[4].start+b+8, "%-6ld", v4);
+
 }
 
 /* ------------------------------------------------------------------ */
 void print_roce_congestion(WINDOW *w, int row,
                            const struct interfaces *iface,
                            const struct interfaces *base,
-                           int baseline_flag) {
-    //print_delimiter(w, row, cols_roce, (size_t)NCOLS(cols_roce));
+                           int baseline_flag)
+{
     CON(w, CLR_IFACE_NAME); wattron(w, A_BOLD);
-    mvwprintw(w, row, 1, "%-17s", iface->name_of_interface);
+    mvwprintw(w, row, roce_cols[0].start, "%-17s", iface->name_of_interface);
     wattroff(w, A_BOLD); COFF(w, CLR_IFACE_NAME);
-    PRINT_VAL(w, row,  19, "%12ld",
-              BVAL(baseline_flag, iface->np_cnp_sent,                   base->np_cnp_sent));
-    PRINT_VAL(w, row,  34, "%12ld",
-              BVAL(baseline_flag, iface->np_ecn_marked_roce_packets,    base->np_ecn_marked_roce_packets));
-    PRINT_VAL(w, row,  49, "%14ld",
-              BVAL(baseline_flag, iface->rp_cnp_handled,                base->rp_cnp_handled));
-    PRINT_VAL(w, row,  66, "%14ld",
-              BVAL(baseline_flag, iface->rp_cnp_ignored,                base->rp_cnp_ignored));
-    PRINT_VAL(w, row,  83, "%12ld",
-              BVAL(baseline_flag, iface->roce_adp_retrans,              base->roce_adp_retrans));
-    PRINT_VAL(w, row,  98, "%14ld",
-              BVAL(baseline_flag, iface->roce_adp_rtrans_to,            base->roce_adp_rtrans_to));
-    PRINT_VAL(w, row, 114, "%12ld",
-              BVAL(baseline_flag, iface->roce_slow_restart,             base->roce_slow_restart));
+
+    long v1 = BVAL(baseline_flag, iface->np_cnp_sent,                base->np_cnp_sent);
+    long v2 = BVAL(baseline_flag, iface->np_ecn_marked_roce_packets, base->np_ecn_marked_roce_packets);
+    long v3 = BVAL(baseline_flag, iface->rp_cnp_handled,             base->rp_cnp_handled);
+    long v4 = BVAL(baseline_flag, iface->rp_cnp_ignored,             base->rp_cnp_ignored);
+    long v5 = BVAL(baseline_flag, iface->roce_adp_retrans,           base->roce_adp_retrans);
+    long v6 = BVAL(baseline_flag, iface->roce_adp_rtrans_to,         base->roce_adp_rtrans_to);
+    long v7 = BVAL(baseline_flag, iface->roce_slow_restart,          base->roce_slow_restart);
+
+    
+    mvwprintw(w, row, roce_cols[1].start+6, "%-6ld", v1);
+    
+    mvwprintw(w, row, roce_cols[2].start+6, "%-6ld", v2);
+    
+    mvwprintw(w, row, roce_cols[3].start+9, "%-6ld", v3);
+    
+    mvwprintw(w, row, roce_cols[4].start+10, "%-6ld", v4);
+    
+    mvwprintw(w, row, roce_cols[5].start+10, "%-6ld", v5);
+    
+    mvwprintw(w, row, roce_cols[6].start+15, "%-6ld", v6);
+    
+    mvwprintw(w, row, roce_cols[7].start+15, "%-6ld", v7);
+
 }
 
 /* ------------------------------------------------------------------ */
 void print_cqe_errors(WINDOW *w, int row,
                       const struct interfaces *iface,
                       const struct interfaces *base,
-                      int baseline_flag) {
-    //print_delimiter(w, row, cols_cqe, (size_t)NCOLS(cols_cqe));
+                      int baseline_flag)
+{
     CON(w, CLR_IFACE_NAME); wattron(w, A_BOLD);
-    mvwprintw(w, row, 1, "%-17s", iface->name_of_interface);
+    mvwprintw(w, row, cqe_cols[0].start, "%-17s", iface->name_of_interface);
     wattroff(w, A_BOLD); COFF(w, CLR_IFACE_NAME);
-    PRINT_ERR(w, row, 19, "%8ld",
-              BVAL(baseline_flag, iface->req_cqe_error,       base->req_cqe_error));
-    PRINT_ERR(w, row, 32, "%10ld",
-              BVAL(baseline_flag, iface->req_cqe_flush_error,  base->req_cqe_flush_error));
-    PRINT_ERR(w, row, 45, "%9ld",
-              BVAL(baseline_flag, iface->resp_cqe_error,       base->resp_cqe_error));
-    PRINT_ERR(w, row, 59, "%10ld",
-              BVAL(baseline_flag, iface->resp_cqe_flush_error, base->resp_cqe_flush_error));
-}
+
+    long v1 = BVAL(baseline_flag, iface->req_cqe_error,        base->req_cqe_error);
+    long v2 = BVAL(baseline_flag, iface->req_cqe_flush_error,  base->req_cqe_flush_error);
+    long v3 = BVAL(baseline_flag, iface->resp_cqe_error,       base->resp_cqe_error);
+    long v4 = BVAL(baseline_flag, iface->resp_cqe_flush_error, base->resp_cqe_flush_error);
+
+    mvwprintw(w, row, cqe_cols[1].start+4, "%-6ld", v1);
+    
+    mvwprintw(w, row, cqe_cols[2].start+6, "%-6ld", v2);
+    
+    mvwprintw(w, row, cqe_cols[3].start+8, "%-6ld", v3);
+    
+    mvwprintw(w, row, cqe_cols[4].start+8, "%-6ld", v4);}
 
 /* ------------------------------------------------------------------ */
 void print_seq_timeout_errors(WINDOW *w, int row,
                               const struct interfaces *iface,
                               const struct interfaces *base,
-                              int baseline_flag) {
-    int b = COLS / 2 + 1;
-    //print_delimiter(w, row, cols_seq, (size_t)NCOLS(cols_seq));
+                              int baseline_flag)
+{
+    int b = COLS / 2 + 1;   /* right-half base column */
+
     CON(w, CLR_IFACE_NAME); wattron(w, A_BOLD);
-    mvwprintw(w, row, b, "%-17s", iface->name_of_interface);
+    mvwprintw(w, row, b + seq_cols[0].start, "%-17s", iface->name_of_interface);
     wattroff(w, A_BOLD); COFF(w, CLR_IFACE_NAME);
-    PRINT_ERR(w, row, b+18, "%8ld",
-              BVAL(baseline_flag, iface->duplicate_request,      base->duplicate_request));
-    PRINT_ERR(w, row, b+31, "%9ld",
-              BVAL(baseline_flag, iface->implied_nak_seq_err,    base->implied_nak_seq_err));
-    PRINT_ERR(w, row, b+45, "%13ld",
-              BVAL(baseline_flag, iface->local_ack_timeout_err,  base->local_ack_timeout_err));
-    PRINT_ERR(w, row, b+60, "%6ld",
-              BVAL(baseline_flag, iface->out_of_buffer,          base->out_of_buffer));
+
+    long v1 = BVAL(baseline_flag, iface->duplicate_request,     base->duplicate_request);
+    long v2 = BVAL(baseline_flag, iface->implied_nak_seq_err,   base->implied_nak_seq_err);
+    long v3 = BVAL(baseline_flag, iface->local_ack_timeout_err, base->local_ack_timeout_err);
+    long v4 = BVAL(baseline_flag, iface->out_of_buffer,         base->out_of_buffer);
+
+    mvwprintw(w, row, seq_cols[1].start+b+4, "%-6ld", v1);
+    
+    mvwprintw(w, row, seq_cols[2].start+b+4, "%-6ld", v2);
+    
+    mvwprintw(w, row, seq_cols[3].start+b+7, "%-6ld", v3);
+    
+    mvwprintw(w, row, seq_cols[4].start+b+8, "%-6ld", v4);  
 }
 
 /* ------------------------------------------------------------------ */
 void print_rx_operations(WINDOW *w, int row,
                          const struct interfaces *iface,
                          const struct interfaces *base,
-                         int baseline_flag) {
-    //print_delimiter(w, row, cols_rxops, (size_t)NCOLS(cols_rxops));
+                         int baseline_flag)
+{
     CON(w, CLR_IFACE_NAME); wattron(w, A_BOLD);
-    mvwprintw(w, row, 1, "%-17s", iface->name_of_interface);
+    mvwprintw(w, row, rx_cols[0].start, "%-17s", iface->name_of_interface);
     wattroff(w, A_BOLD); COFF(w, CLR_IFACE_NAME);
-    PRINT_VAL(w, row, 19, "%11ld",
-              BVAL(baseline_flag, iface->rx_atomic_requests,  base->rx_atomic_requests));
-    PRINT_VAL(w, row, 34, "%12ld",
-              BVAL(baseline_flag, iface->rx_dct_connect,      base->rx_dct_connect));
-    PRINT_VAL(w, row, 49, "%11ld",
-              BVAL(baseline_flag, iface->rx_icrc_encapsulatd, base->rx_icrc_encapsulatd));
-    PRINT_VAL(w, row, 63, "%9ld",
-              BVAL(baseline_flag, iface->rx_read_requests,    base->rx_read_requests));
-    PRINT_VAL(w, row, 76, "%9ld",
-              BVAL(baseline_flag, iface->rx_write_requests,   base->rx_write_requests));
-    PRINT_VAL(w, row, 89, "%9ld",
-              BVAL(baseline_flag, iface->lifespan,            base->lifespan));
+
+    long v1 = BVAL(baseline_flag, iface->rx_atomic_requests,  base->rx_atomic_requests);
+    long v2 = BVAL(baseline_flag, iface->rx_dct_connect,      base->rx_dct_connect);
+    long v3 = BVAL(baseline_flag, iface->rx_icrc_encapsulatd, base->rx_icrc_encapsulatd);
+    long v4 = BVAL(baseline_flag, iface->rx_read_requests,    base->rx_read_requests);
+    long v5 = BVAL(baseline_flag, iface->rx_write_requests,   base->rx_write_requests);
+    long v6 = BVAL(baseline_flag, iface->lifespan,            base->lifespan);
+
+
+    mvwprintw(w, row, rx_cols[1].start+6, "%-8ld", v1);
+
+    mvwprintw(w, row, rx_cols[2].start+6, "%-8ld", v2);
+
+    mvwprintw(w, row, rx_cols[3].start+8, "%-8ld", v3);
+
+    mvwprintw(w, row, rx_cols[4].start+8, "%-8ld", v4);
+
+    mvwprintw(w, row, rx_cols[5].start+15, "%-8ld", v5);
+
+    mvwprintw(w, row, rx_cols[6].start+28, "%-8ld", v6);
 }
 
 /* ================================================================== *
@@ -616,7 +680,7 @@ void draw_screen(WINDOW *pad,
                  int error_count) {
     werase(pad);
 
-    print_header(pad, interface_count,active_count, error_count, baseline_flag);
+    print_header(pad, interface_count, active_count, error_count, baseline_flag);
     print_summary_cards(pad, metrics, baseline, interface_count, active_count, error_count, baseline_flag);
     construct_window_layout(pad, interface_count);
 
@@ -625,10 +689,10 @@ void draw_screen(WINDOW *pad,
         const struct interfaces *iface = &metrics->ib_interfaces[i];
         const struct interfaces *base  = baseline_flag
                                          ? &baseline->ib_interfaces[i]
-                                         : iface;   /* unused when flag=0 */
+                                         : iface;
         int dr = i + 1;
         print_interface_status   (pad, ROW_STATUS(n) + 2 + dr, iface);
-        print_link_errors        (pad, ROW_LINK(n)   + 2 + dr, iface, base, 0); //last param was baseline_flag
+        print_link_errors        (pad, ROW_LINK(n)   + 2 + dr, iface, base, 0);
         print_port_errors        (pad, ROW_LINK(n)   + 2 + dr, iface, base, 0);
         print_roce_congestion    (pad, ROW_ROCE(n)   + 2 + dr, iface, base, 0);
         print_cqe_errors         (pad, ROW_CQE(n)    + 2 + dr, iface, base, 0);
@@ -642,7 +706,10 @@ void draw_screen(WINDOW *pad,
             for (int j = 0; j < prev_count; ++j) {
                 if (strcmp(metrics->ib_interfaces[i].name_of_interface,
                            prev_metrics->ib_interfaces[j].name_of_interface) == 0) {
-                    print_io_throughput(pad,ROW_IO(n) + 2 + dr, &metrics->ib_interfaces[i], &prev_metrics->ib_interfaces[j], refresh_second); //print_io_throughput(pad,ROW_IO(n) + 2 + i + 1, &metrics->ib_interfaces[i], &prev_metrics->ib_interfaces[j], refresh_second);
+                    print_io_throughput(pad, ROW_IO(n) + 2 + dr,
+                                        &metrics->ib_interfaces[i],
+                                        &prev_metrics->ib_interfaces[j],
+                                        refresh_second);
                     break;
                 }
             }
