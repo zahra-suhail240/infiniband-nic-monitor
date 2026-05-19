@@ -94,6 +94,10 @@ The tool displays the following counter categories:
 - **ncurses_display.c/h**: Terminal UI rendering and color scheme
 - **extra.c/h**: Utility functions for file I/O and system checks
 
+## Overview
+<img width="2045" height="962" alt="image" src="https://github.com/user-attachments/assets/e53eef24-67fa-419c-9b04-a2d3f56ec10d" />
+
+
 ## Compatibility
 
 - **InfiniBand (IB)**: Full support for traditional IB protocols
